@@ -6,8 +6,11 @@ internal static class Program
 {
     private static void Main(string[] args)
     {
-        var skydimoDriver = new SkydimoDriver("/dev/ttyUSB0", 60);
-        skydimoDriver.OpenConnection();
+        using var skydimoDriver = new SkydimoDriver("/dev/ttyUSB0", 60);
+        
+        if (!skydimoDriver.OpenConnection())
+            return;
+        
         skydimoDriver.StartUpdateLoop();
         
         skydimoDriver.Fill(new ColorRGB(255,0, 255));
@@ -15,6 +18,5 @@ internal static class Program
         
         Console.ReadLine();
         
-        skydimoDriver.Dispose();
     }
 }
