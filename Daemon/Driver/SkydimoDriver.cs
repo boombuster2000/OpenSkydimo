@@ -5,6 +5,7 @@ namespace Daemon.Driver;
 public class SkydimoDriver
 {
     private const int HeaderSize = 6;
+    private readonly Logger _logger;
     
     private readonly SerialPort _serialPort;
     private byte[] _ledBuffer;
@@ -15,7 +16,8 @@ public class SkydimoDriver
     public SkydimoDriver(string portName, int ledCount, int baudRate = 115200)
     {
         LedCount = ledCount;
-        
+        _logger = new Logger();
+
         _currerntColors = new ColorRGB[LedCount];
         
         // Each LED requires 3 bytes (r,g,b)
@@ -46,5 +48,38 @@ public class SkydimoDriver
         _ledBuffer[4] = 0;
         
         _ledBuffer[5] = (byte)(Math.Min(LedCount, 255)); // Max 255 LEDs
+    }
+    
+    public bool OpenConnection()
+    {
+        try
+        {
+            if (_serialPort.IsOpen)
+            {
+                _logger.Info($"Serial port {_serialPort.PortName} is already open");
+                return true;
+            }
+        
+            _logger.Info($"Opening serial port {_serialPort.PortName} (Baud: {_serialPort.BaudRate}, LEDs: {LedCount})");
+            _serialPort.Open();
+            _logger.Info($"Successfully opened serial port {_serialPort.PortName}");
+        
+            return true;
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.Error($"Access denied to serial port {_serialPort.PortName}. Port may be in use by another application", ex);
+            return false;
+        }
+        catch (IOException ex)
+        {
+            _logger.Error($"I/O error opening serial port {_serialPort.PortName}. Check if device is connected", ex);
+            return false;
+        }
+        catch (Exception ex)
+        {
+            _logger.Error($"Unexpected error opening serial port {_serialPort.PortName}", ex);
+            return false;
+        }
     }
 }
