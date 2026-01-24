@@ -118,7 +118,7 @@ public class SkydimoDriver : IDisposable
         if (!_isRunning) return;
 
         _isRunning = false;
-        _updateThread?.Join(1000); // Wait up to 1 second for thread to finish
+        _updateThread?.Join();
         _logger.Info("Stopped LED update loop");
     }
 
