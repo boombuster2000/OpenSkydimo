@@ -37,7 +37,7 @@ public class SkydimoDriver
 
     private void AddHeaderToBuffer()
     {
-        // "Ada" - Magic identifer word
+        // "Ada" - Magic identifier word
         _ledBuffer[0] = (byte)'A';
         _ledBuffer[1] = (byte)'d';
         _ledBuffer[2] = (byte)'a';
