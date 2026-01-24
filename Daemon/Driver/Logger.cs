@@ -5,6 +5,7 @@ public class Logger
     public enum LogLevel
     {
         Info,
+        Warning,
         Error,
     }
 
@@ -13,12 +14,14 @@ public class Logger
     private readonly Dictionary<LogLevel, bool> _isLogLevelEnabled = new()
     {
         { LogLevel.Info, true },
+        {LogLevel.Warning, true },
         { LogLevel.Error, true },
     };
     
     private readonly Dictionary<LogLevel, ConsoleColor> _logLevelColors = new()
     {
         { LogLevel.Info, ConsoleColor.Green },
+        { LogLevel.Warning, ConsoleColor.Yellow },
         { LogLevel.Error, ConsoleColor.Red },
     };
     
@@ -58,6 +61,7 @@ public class Logger
 
     
     public void Info(string message) => Log(LogLevel.Info, message);
+    public void Warning(string message) => Log(LogLevel.Warning, message);
     public void Error(string message) => Log(LogLevel.Error, message);
     public void Error(string message, Exception ex) => 
         Log(LogLevel.Error, $"{message} - Exception: {ex.Message}\n{ex.StackTrace}");
