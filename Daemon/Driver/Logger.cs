@@ -37,10 +37,9 @@ public class Logger
 
     public void Log(LogLevel level, string message)
     {
-        if (!_isLogLevelEnabled[level]) return;
-        
         lock (_lockObj)
         {
+            if (!_isLogLevelEnabled[level]) return;
             var originalColor = Console.ForegroundColor;
             
             // Timestamp in gray
