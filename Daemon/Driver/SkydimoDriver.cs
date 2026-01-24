@@ -1,4 +1,5 @@
 using System.IO.Ports;
+using System.Net.Http.Headers;
 
 namespace Daemon.Driver;
 
@@ -10,6 +11,10 @@ public class SkydimoDriver : IDisposable
     private readonly SerialPort _serialPort;
     private readonly byte[] _ledBuffer;
     private readonly ColorRGB[] _currentColors;
+    private readonly Lock _lock = new Lock();
+    
+    private Thread? _updateThread;
+    private bool _isRunning;
 
     private int LedCount { get; }
 
@@ -83,15 +88,84 @@ public class SkydimoDriver : IDisposable
         }
     }
 
-    public bool UpdateLEDs(ColorRGB[] colors)
+    public void StartUpdateLoop()
+    {
+        if (_isRunning)
+        {
+            _logger.Warning("Update loop is already running");
+            return;
+        }
+
+        _isRunning = true;
+        _updateThread = new Thread(LedUpdateLoop)
+        {
+            IsBackground = true,
+            Name = "SkydimoUpdateThread"
+        };
+        _updateThread.Start();
+        
+        _logger.Info("Started LED update loop");
+    }
+
+    private void StopUpdateLoop()
+    {
+        if (!_isRunning) return;
+
+        _isRunning = false;
+        _updateThread?.Join(1000); // Wait up to 1 second for thread to finish
+        _logger.Info("Stopped LED update loop");
+    }
+
+    private void LedUpdateLoop()
+    {
+        _logger.Info("LED update loop started");
+
+
+        while (_isRunning)
+        {
+            if (_serialPort.IsOpen)
+                SendCurrentColors();
+
+
+            Thread.Sleep(100);
+        }
+
+
+        _logger.Info("LED update loop stopped");
+    }
+
+    private bool SendCurrentColors()
+    {
+        lock (_lock)
+        {
+            try
+            {
+                if (!_serialPort.IsOpen)
+                {
+                    _logger.Error($"Cannot update LEDs: Serial port {_serialPort.PortName} is not open");
+                    return false;
+                }
+
+                _serialPort.Write(_ledBuffer, 0, _ledBuffer.Length);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error($"Failed to send LED data to {_serialPort.PortName}: {ex.Message}");
+                return false;
+            }
+        }
+    }
+
+    private bool SetLedColors(ColorRGB[] colors)
     {
         if (colors.Length != LedCount)
         {
             _logger.Error($"LED count mismatch. Expected {LedCount}, got {colors.Length}");
             return false;
         }
-    
-        try
+
+        lock (_lock)
         {
             Array.Copy(colors, _currentColors, LedCount);
         
@@ -102,29 +176,33 @@ public class SkydimoDriver : IDisposable
                 _ledBuffer[offset++] = colors[i].G;
                 _ledBuffer[offset++] = colors[i].B;
             }
-
-            if (_serialPort.IsOpen)
-            {
-                _serialPort.Write(_ledBuffer, 0, _ledBuffer.Length);
-                return true;
-            }
-
-            _logger.Error($"Cannot update {LedCount} LEDs: Serial port {_serialPort.PortName} is not open");
-            return false;
         }
-        catch (Exception ex)
-        {
-            _logger.Error($"Failed to update {LedCount} LEDs on {_serialPort.PortName}: {ex.Message}");
-            return false;
-        }
+
+        return true;
+    }
+
+    public bool Fill(ColorRGB color)
+    {
+        var colors = new ColorRGB[LedCount];
+        
+        for (var i = 0; i < LedCount; i++)
+            colors[i] = color;
+        
+        return SetLedColors(colors);
     }
     
     public void Dispose()
     {
-        _logger.Info($"Closing serial port {_serialPort.PortName}");
-        _serialPort.Close();
-        _logger.Info($"Successfully closed serial port {_serialPort.PortName}");
+        StopUpdateLoop();
         
+        if (_serialPort.IsOpen)
+        {
+            _logger.Info($"Closing serial port {_serialPort.PortName}");
+            _serialPort.Close();
+            _logger.Info($"Successfully closed serial port {_serialPort.PortName}");
+        }
+        
+        _serialPort.Dispose();
         GC.SuppressFinalize(this);
     }
 }
