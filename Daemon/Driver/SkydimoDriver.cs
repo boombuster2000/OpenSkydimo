@@ -8,17 +8,17 @@ public class SkydimoDriver : IDisposable
     private readonly Logger _logger;
     
     private readonly SerialPort _serialPort;
-    private byte[] _ledBuffer;
-    private readonly ColorRGB[] _currerntColors;
+    private readonly byte[] _ledBuffer;
+    private readonly ColorRGB[] _currentColors;
 
-    public int LedCount { get; }
+    private int LedCount { get; }
 
     public SkydimoDriver(string portName, int ledCount, int baudRate = 115200)
     {
         LedCount = ledCount;
         _logger = new Logger();
 
-        _currerntColors = new ColorRGB[LedCount];
+        _currentColors = new ColorRGB[LedCount];
         
         // Each LED requires 3 bytes (r,g,b)
         var bufferSize = HeaderSize + (LedCount * 3);
@@ -83,6 +83,42 @@ public class SkydimoDriver : IDisposable
         }
     }
 
+    public bool UpdateLEDs(ColorRGB[] colors)
+    {
+        if (colors.Length != LedCount)
+        {
+            _logger.Error($"LED count mismatch. Expected {LedCount}, got {colors.Length}");
+            return false;
+        }
+    
+        try
+        {
+            Array.Copy(colors, _currentColors, LedCount);
+        
+            var offset = HeaderSize;
+            for (var i = 0; i < colors.Length; i++)
+            {
+                _ledBuffer[offset++] = colors[i].R;
+                _ledBuffer[offset++] = colors[i].G;
+                _ledBuffer[offset++] = colors[i].B;
+            }
+
+            if (_serialPort.IsOpen)
+            {
+                _serialPort.Write(_ledBuffer, 0, _ledBuffer.Length);
+                return true;
+            }
+
+            _logger.Error($"Cannot update {LedCount} LEDs: Serial port {_serialPort.PortName} is not open");
+            return false;
+        }
+        catch (Exception ex)
+        {
+            _logger.Error($"Failed to update {LedCount} LEDs on {_serialPort.PortName}: {ex.Message}");
+            return false;
+        }
+    }
+    
     public void Dispose()
     {
         _logger.Info($"Closing serial port {_serialPort.PortName}");
