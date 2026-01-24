@@ -14,7 +14,7 @@ public class SkydimoDriver : IDisposable
     private readonly Lock _lock = new Lock();
     
     private Thread? _updateThread;
-    private bool _isRunning;
+    private volatile bool _isRunning;
 
     private int LedCount { get; }
 
