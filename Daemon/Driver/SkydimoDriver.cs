@@ -2,7 +2,7 @@ using System.IO.Ports;
 
 namespace Daemon.Driver;
 
-public class SkydimoDriver
+public class SkydimoDriver : IDisposable
 {
     private const int HeaderSize = 6;
     private readonly Logger _logger;
@@ -81,5 +81,14 @@ public class SkydimoDriver
             _logger.Error($"Unexpected error opening serial port {_serialPort.PortName}", ex);
             return false;
         }
+    }
+
+    public void Dispose()
+    {
+        _logger.Info($"Closing serial port {_serialPort.PortName}");
+        _serialPort.Close();
+        _logger.Info($"Successfully closed serial port {_serialPort.PortName}");
+        
+        GC.SuppressFinalize(this);
     }
 }
