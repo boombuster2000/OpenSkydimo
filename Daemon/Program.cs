@@ -1,9 +1,22 @@
-﻿namespace Daemon;
+﻿using Daemon.Driver;
 
-class Program
+namespace Daemon;
+
+internal static class Program
 {
-    static void Main(string[] args)
+    private static void Main(string[] args)
     {
-        Console.WriteLine("Hello, World!");
+        using var skydimoDriver = new SkydimoDriver("/dev/ttyUSB0", 60);
+        
+        if (!skydimoDriver.OpenConnection())
+            return;
+        
+        skydimoDriver.StartUpdateLoop();
+        
+        skydimoDriver.Fill(new ColorRGB(255,0, 255));
+        
+        
+        Console.ReadLine();
+        
     }
 }
