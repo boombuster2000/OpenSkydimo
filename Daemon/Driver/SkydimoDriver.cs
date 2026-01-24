@@ -20,6 +20,12 @@ public class SkydimoDriver : IDisposable
 
     public SkydimoDriver(string portName, int ledCount, int baudRate = 115200)
     {
+        if (string.IsNullOrWhiteSpace(portName))
+            throw new ArgumentNullException(nameof(portName), "Port name must be provided.");
+        
+        if  (ledCount is <= 0 or > 255)
+            throw new ArgumentOutOfRangeException(nameof(ledCount), "LedCount must be between 1 and 255.");
+        
         LedCount = ledCount;
         _logger = new Logger();
 
