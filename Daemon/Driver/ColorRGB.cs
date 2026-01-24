@@ -6,7 +6,7 @@ namespace Daemon.Driver;
 /// <param name="r">Red channel intensity (0-255)</param>
 /// <param name="g">Green channel intensity (0-255)</param>
 /// <param name="b">Blue channel intensity (0-255)</param>
-public struct ColorRGB(byte r, byte g, byte b)
+public readonly struct ColorRGB(byte r, byte g, byte b)
 {
     public readonly byte R = r;
     public readonly byte G = g;
