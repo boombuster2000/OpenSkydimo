@@ -1,4 +1,5 @@
-﻿using Daemon.Driver;
+﻿using Daemon.Commands;
+using Daemon.Driver;
 
 namespace Daemon;
 
@@ -6,15 +7,9 @@ internal static class Program
 {
     private static void Main(string[] args)
     {
-        using var skydimoDriver = new SkydimoDriver("/dev/ttyUSB0", 60);
+        var commandsListener = new Listener();
         
-        if (!skydimoDriver.OpenConnection())
-            return;
-        
-        skydimoDriver.StartUpdateLoop();
-        
-        skydimoDriver.Fill(new ColorRGB(255,0, 255));
-        
+        commandsListener.Start();
         
         Console.ReadLine();
         
