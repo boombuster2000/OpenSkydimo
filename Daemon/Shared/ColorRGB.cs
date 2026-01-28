@@ -1,4 +1,4 @@
-namespace Daemon.Driver;
+namespace Daemon.Shared;
 
 /// <summary>
 /// Represents an RGB color with values from 0-255 for each channel.
