@@ -1,5 +1,5 @@
 using System.IO.Ports;
-using System.Net.Http.Headers;
+using Daemon.Shared;
 
 namespace Daemon.Driver;
 
@@ -27,7 +27,7 @@ public class SkydimoDriver : IDisposable
             throw new ArgumentOutOfRangeException(nameof(ledCount), "LedCount must be between 1 and 255.");
         
         LedCount = ledCount;
-        _logger = new Logger();
+        _logger = new Logger("Driver");
 
         _currentColors = new ColorRGB[LedCount];
         
