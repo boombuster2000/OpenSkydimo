@@ -1,6 +1,6 @@
-namespace Daemon.Driver;
+namespace Daemon.Shared;
 
-public class Logger
+public class Logger(string systemName)
 {
     public enum LogLevel
     {
@@ -9,6 +9,8 @@ public class Logger
         Error,
     }
 
+    private readonly string _systemName = systemName;
+    
     private readonly Lock _lockObj = new();
     
     private readonly Dictionary<LogLevel, bool> _isLogLevelEnabled = new()
@@ -26,7 +28,7 @@ public class Logger
     };
     
     private static string Timestamp => DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-
+    
     public void SetLogLevel(LogLevel level, bool enabled)
     {
         lock (_lockObj)
@@ -45,6 +47,10 @@ public class Logger
             // Timestamp in gray
             Console.ForegroundColor = ConsoleColor.Gray;
             Console.Write($"[{Timestamp}] ");
+            
+            // System Name in Blue
+            Console.ForegroundColor = ConsoleColor.Blue;
+            Console.Write($"[{_systemName.ToUpper()}] ");
             
             // Log level in its specific color
             Console.ForegroundColor = _logLevelColors[level];
