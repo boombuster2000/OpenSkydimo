@@ -144,8 +144,7 @@ public class Listener
             var g = byte.Parse(rgb[1]);
             var b = byte.Parse(rgb[2]);
             ColorRGB color =  new(r, g, b);
-        
-            // TODO: Apply color to LEDs
+            
             _logger.Info($"Filling LEDs with RGB({r},{g},{b})");
 
             if (!_skydimoDriver.Fill(color))
