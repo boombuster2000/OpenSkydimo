@@ -5,7 +5,7 @@ using Daemon.Shared;
 
 namespace Daemon.Commands;
 
-public class Listener
+public class Listener : IDisposable
 {
     private readonly Logger _logger;
     private readonly CancellationTokenSource _cancellationTokenSource;
@@ -162,5 +162,13 @@ public class Listener
     public void Stop()
     {
         _cancellationTokenSource.Cancel();
+    }
+
+    public void Dispose()
+    {
+        Stop();
+        _skydimoDriver.Dispose();
+        _cancellationTokenSource.Dispose();
+        GC.SuppressFinalize(this);
     }
 }
