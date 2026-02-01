@@ -9,7 +9,6 @@ public class Listener : IDisposable
 {
     private readonly Logger _logger;
     private readonly CancellationTokenSource _cancellationTokenSource;
-    private readonly Thread _listenerThread;
 
     private readonly SkydimoDriver _skydimoDriver = new("/dev/ttyUSB0", 60);
 
@@ -17,13 +16,6 @@ public class Listener : IDisposable
     {
         _logger = new Logger("Listener");
         _cancellationTokenSource = new CancellationTokenSource();
-        
-        _listenerThread = new Thread(ListenForConnections)
-        {
-            IsBackground = true,
-            Name = "SkydimoListenerThread"
-        };
-        
         
         if (!_skydimoDriver.OpenConnection())
             throw new InvalidOperationException("Failed to open connection to Skydimo driver");
@@ -34,10 +26,10 @@ public class Listener : IDisposable
 
     public void Start()
     {
-        _listenerThread.Start();
+        _ = Task.Run(ListenForConnectionsAsync);
     }
 
-    private async void ListenForConnections()
+    private async Task ListenForConnectionsAsync()
     {
         while (!_cancellationTokenSource.Token.IsCancellationRequested)
         {
