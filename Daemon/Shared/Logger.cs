@@ -59,8 +59,6 @@ public class Logger(string systemName)
             // Message in default color
             Console.ForegroundColor = originalColor;
             Console.WriteLine($"- {message}");
-            
-            Console.ForegroundColor = originalColor;
         }
     }
 
