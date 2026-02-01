@@ -159,7 +159,7 @@ public class Listener : IDisposable
         }
     }
 
-    public void Stop()
+    private void Stop()
     {
         _cancellationTokenSource.Cancel();
     }
