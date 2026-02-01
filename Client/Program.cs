@@ -25,7 +25,7 @@ internal static class Program
             Console.WriteLine($"Response: {response}");
             return 0;
         }
-        catch (TimeoutException)
+        catch (OperationCanceledException)
         {
             await Console.Error.WriteLineAsync("Error: Could not connect to Skydimo daemon. Is it running?");
             return 2;
