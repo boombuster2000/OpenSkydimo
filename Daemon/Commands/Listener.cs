@@ -26,7 +26,7 @@ public class Listener
         
         
         if (!_skydimoDriver.OpenConnection())
-            return;
+            throw new InvalidOperationException("Failed to open connection to Skydimo driver");
             
         
         _skydimoDriver.StartUpdateLoop();
