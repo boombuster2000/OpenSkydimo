@@ -1,7 +1,11 @@
-#include <openskydimo/logger.h>
+#include <SkydimoDriver.h>
 
 int main()
 {
-    const openskydimo::Logger logger("daemon");
-    logger.Log("Starting");
+    SkydimoDriver driver("/dev/ttyUSB0", 60);
+
+    driver.OpenSerialConnection();
+
+    driver.Fill(ColorRGB(255, 255, 255));
+    driver.SendColors();
 }
