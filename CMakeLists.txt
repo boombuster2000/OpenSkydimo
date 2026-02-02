@@ -5,6 +5,12 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+set(FETCHCONTENT_BASE_DIR
+        ${CMAKE_SOURCE_DIR}/.cmake_cache
+        CACHE PATH "FetchContent base directory"
+)
+include(FetchContent)
+
 add_subdirectory(common)
 add_subdirectory(daemon)
 add_subdirectory(cli)
