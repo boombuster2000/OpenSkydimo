@@ -4,6 +4,9 @@
 #include <string>
 #include <vector>
 
+#include "spdlog/sinks/stdout_color_sinks-inl.h"
+#include "spdlog/spdlog.h"
+
 class SkydimoDriver
 {
 
@@ -23,6 +26,8 @@ private:
     void AddHeaderToBuffer();
 
 private:
+    std::shared_ptr<spdlog::logger> logger = spdlog::stderr_color_mt("SkydimoDriver");
+
     const int m_headerSize = 6;
     int m_serialPort = -1;
 

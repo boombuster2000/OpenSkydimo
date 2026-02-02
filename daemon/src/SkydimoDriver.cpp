@@ -2,12 +2,10 @@
 
 #include <utility>
 
-#include <cerrno>  // Error integer and strerror() function
-#include <fcntl.h> // Contains file controls like O_RDWR
+#include <fcntl.h>
 #include <iostream>
-#include <ostream>
-#include <termios.h> // Contains POSIX terminal control definitions
-#include <unistd.h>  // write(), read(), close()
+#include <termios.h>
+#include <unistd.h>
 
 SkydimoDriver::SkydimoDriver(std::string portName, const int ledCount, const int baudRate)
     : m_portName(std::move(portName)), m_ledCount(ledCount), m_baudRate(baudRate),
@@ -15,6 +13,7 @@ SkydimoDriver::SkydimoDriver(std::string portName, const int ledCount, const int
 {
     AddHeaderToBuffer();
 }
+
 SkydimoDriver::~SkydimoDriver()
 {
     if (m_serialPort >= 0)
@@ -23,11 +22,12 @@ SkydimoDriver::~SkydimoDriver()
 
 bool SkydimoDriver::OpenSerialConnection()
 {
+    logger->info("Opening serial port {}", m_portName);
     m_serialPort = open(m_portName.c_str(), O_RDWR | O_NOCTTY);
 
     if (m_serialPort < 0)
     {
-        std::cerr << "Unable to open serial port " << m_portName << std::endl;
+        logger->error("Unabled to open serial port {}", m_portName);
         return false;
     }
 
@@ -35,7 +35,7 @@ bool SkydimoDriver::OpenSerialConnection()
 
     if (tcgetattr(m_serialPort, &tty) != 0)
     {
-        std::cerr << "Unable to get tty attributes" << std::endl;
+        logger->error("Unabled to get tty attributes");
         close(m_serialPort);
         return false;
     }
@@ -88,7 +88,7 @@ bool SkydimoDriver::OpenSerialConnection()
         baudRate = B230400;
         break;
     default:
-        std::cerr << "Unsupported baud rate: " << m_baudRate << std::endl;
+        logger->error("Unsupported baud rate: {}", m_baudRate);
         close(m_serialPort);
         return false;
     }
@@ -99,7 +99,7 @@ bool SkydimoDriver::OpenSerialConnection()
     // Apply settings
     if (tcsetattr(m_serialPort, TCSANOW, &tty) != 0)
     {
-        std::cerr << "Unable to set tty attributes" << std::endl;
+        logger->error("Unable to set tty attributes");
         close(m_serialPort);
         return false;
     }
@@ -108,6 +108,7 @@ bool SkydimoDriver::OpenSerialConnection()
 }
 void SkydimoDriver::CloseSerialConnection()
 {
+    logger->info("Closing serial port {}", m_portName);
     if (m_serialPort >= 0)
     {
         close(m_serialPort);
@@ -119,16 +120,21 @@ void SkydimoDriver::SendColors() const
 {
     if (const ssize_t bytesWritten = write(m_serialPort, m_buffer.data(), m_buffer.size()); bytesWritten < 0)
     {
-        std::cerr << "Failed to write to serial port" << std::endl;
+        logger->error("Failed to write to serial port {}: {} (errno: {})", m_portName, strerror(errno), errno);
     }
     else if (static_cast<size_t>(bytesWritten) != m_buffer.size())
     {
-        std::cerr << "Incomplete write: " << bytesWritten << " of " << m_buffer.size() << " bytes" << std::endl;
+        logger->warn("Incomplete write to {}: {}/{} bytes", m_portName, bytesWritten, m_buffer.size());
+    }
+    else
+    {
+        logger->debug("Sent {} bytes to {}", bytesWritten, m_portName);
     }
 }
 
 void SkydimoDriver::Fill(const ColorRGB color)
 {
+    logger->debug("Filling {} LEDs with RGB{}", m_ledCount, color);
     int offset = m_headerSize;
 
     for (int i = 0; i < m_ledCount; i++)
