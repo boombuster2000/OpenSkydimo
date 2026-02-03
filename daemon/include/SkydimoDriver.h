@@ -26,7 +26,7 @@ private:
     void AddHeaderToBuffer();
 
 private:
-    std::shared_ptr<spdlog::logger> logger = spdlog::stderr_color_mt("SkydimoDriver");
+    std::shared_ptr<spdlog::logger> logger = spdlog::stdout_color_mt("SkydimoDriver");
 
     const int m_headerSize = 6;
     int m_serialPort = -1;
