@@ -17,11 +17,11 @@ public:
     void Stop();
     [[nodiscard]] bool ShouldStop() const;
 
-    void ListenLoop();
+    void ListenLoop() const;
 
-    void HandleClient(int clientFd);
+    void HandleClient(int clientFd) const;
 
-    void ExecuteCommand(const std::string& command) const;
+    [[nodiscard]] std::string ExecuteCommand(const std::string& command) const;
 
 private:
     std::shared_ptr<spdlog::logger> logger = spdlog::stdout_color_mt("CommandsListener");
