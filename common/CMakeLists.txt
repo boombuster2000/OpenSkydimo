@@ -1,6 +1,5 @@
 add_library(openskydimo-common INTERFACE
         include/openskydimo/types.h
-        src/validators.cpp
 )
 
 FetchContent_Declare(
