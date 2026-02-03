@@ -3,6 +3,7 @@
 #include <cerrno>
 #include <cstring>
 #include <iostream>
+#include <sstream>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
@@ -82,7 +83,7 @@ bool CommandsListener::ShouldStop() const
     return !m_isServerRunning;
 }
 
-void CommandsListener::ListenLoop()
+void CommandsListener::ListenLoop() const
 {
     while (m_isServerRunning)
     {
@@ -101,35 +102,43 @@ void CommandsListener::ListenLoop()
     }
 }
 
-void CommandsListener::HandleClient(int clientFd)
+void CommandsListener::HandleClient(const int clientFd) const
 {
     char buffer[1024];
-    ssize_t bytesRead = read(clientFd, buffer, sizeof(buffer) - 1);
 
-    if (bytesRead > 0)
+    if (const ssize_t bytesRead = read(clientFd, buffer, sizeof(buffer) - 1); bytesRead > 0)
     {
         buffer[bytesRead] = '\0';
-
-        // Remove trailing newline if present
-        std::string command(buffer);
+ std::string command(buffer);
         if (!command.empty() && command.back() == '\n')
-        {
             command.pop_back();
-        }
 
-        // Call the callback with the command
-        ExecuteCommand(command);
+        const auto response = ExecuteCommand(command);
 
-        // Send acknowledgment
-        const auto response = "OK\n";
-        write(clientFd, response, strlen(response));
+        write(clientFd, response.c_str(), strlen(response.c_str()));
     }
 }
 
-void CommandsListener::ExecuteCommand(const std::string& command) const
+std::string CommandsListener::ExecuteCommand(const std::string& command) const
 {
-    if (command.substr(0, 4) == "FILL")
+    std::string response = "OK\n";
+
+    if (command.substr(0, 4) == "fill")
     {
-        m_driver.Fill(ColorRGB(255, 0, 0));
+        const std::string color = command.substr(5);
+
+        std::istringstream iss(color);
+
+        if (int r, g, b; iss >> r >> g >> b && r >= 0 && r <= 255 && g >= 0 && g <= 255 && b >= 0 && b <= 255)
+        {
+            const ColorRGB rgb(r, g, b);
+            m_driver.Fill(rgb);
+        }
+        else
+        {
+            response = "ERROR: Invalid RGB color format. Expected: fill <r> <g> <b> where r, g, b are integers 0-255\n";
+        }
     }
+
+    return response;
 }
