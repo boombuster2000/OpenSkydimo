@@ -1,8 +1,8 @@
 add_library(openskydimo-common INTERFACE
         include/openskydimo/types.h
+        src/validators.cpp
 )
 
-# Downloads spdlog
 FetchContent_Declare(
         spdlog
         GIT_REPOSITORY https://github.com/gabime/spdlog.git
