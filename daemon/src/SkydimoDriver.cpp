@@ -1,18 +1,9 @@
 #include "SkydimoDriver.h"
 
-#include <utility>
-
 #include <fcntl.h>
 #include <iostream>
 #include <termios.h>
 #include <unistd.h>
-
-SkydimoDriver::SkydimoDriver(std::string portName, const int ledCount, const int baudRate)
-    : m_portName(std::move(portName)), m_ledCount(ledCount), m_baudRate(baudRate),
-      m_buffer(m_headerSize + (ledCount * 3))
-{
-    AddHeaderToBuffer();
-}
 
 SkydimoDriver::~SkydimoDriver()
 {
@@ -20,9 +11,39 @@ SkydimoDriver::~SkydimoDriver()
         CloseSerialConnection();
 }
 
+void SkydimoDriver::SetSerialPort(const std::string& portName)
+{
+    m_portName = portName;
+}
+
+void SkydimoDriver::SetBaudRate(const int baudRate)
+{
+    m_baudRate = baudRate;
+}
+
+void SkydimoDriver::SetLedCount(const int ledCount)
+{
+    m_ledCount = ledCount;
+}
+
 bool SkydimoDriver::OpenSerialConnection()
 {
     logger->info("Opening serial port {}", m_portName);
+
+    if (m_portName.empty())
+    {
+        logger->error("No serial port specified");
+        return false;
+    }
+
+    if (m_ledCount == 0)
+    {
+        logger->error("LED count is set to 0");
+        return false;
+    }
+
+    AddHeaderToBuffer();
+
     m_serialPort = open(m_portName.c_str(), O_RDWR | O_NOCTTY);
 
     if (m_serialPort < 0)
@@ -104,8 +125,10 @@ bool SkydimoDriver::OpenSerialConnection()
         return false;
     }
 
+    m_isReadyToSend = true;
     return true;
 }
+
 void SkydimoDriver::CloseSerialConnection()
 {
     logger->info("Closing serial port {}", m_portName);
@@ -114,10 +137,23 @@ void SkydimoDriver::CloseSerialConnection()
         close(m_serialPort);
         m_serialPort = -1;
     }
+
+    m_isReadyToSend = false;
+}
+
+bool SkydimoDriver::IsReadyToSend() const
+{
+    return m_isReadyToSend;
 }
 
 void SkydimoDriver::SendColors() const
 {
+    if (!m_isReadyToSend)
+    {
+        logger->debug("Not ready to send colors");
+        return;
+    }
+
     if (const ssize_t bytesWritten = write(m_serialPort, m_buffer.data(), m_buffer.size()); bytesWritten < 0)
     {
         logger->error("Failed to write to serial port {}: {} (errno: {})", m_portName, strerror(errno), errno);
@@ -147,6 +183,9 @@ void SkydimoDriver::Fill(const ColorRGB color)
 
 void SkydimoDriver::AddHeaderToBuffer()
 {
+    const size_t bufferSize = m_headerSize + (m_ledCount * 3);
+    m_buffer.resize(bufferSize);
+
     m_buffer[0] = static_cast<std::byte>('A');
     m_buffer[1] = static_cast<std::byte>('d');
     m_buffer[2] = static_cast<std::byte>('a');

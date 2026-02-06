@@ -11,15 +11,18 @@ class SkydimoDriver
 {
 
 public:
-    SkydimoDriver(std::string portName, int ledCount, int baudRate = 115200);
+    SkydimoDriver() = default;
     ~SkydimoDriver();
 
-    bool OpenSerialConnection();
+    void SetSerialPort(const std::string& portName);
+    void SetBaudRate(int baudRate);
+    void SetLedCount(int ledCount);
 
+    bool OpenSerialConnection();
     void CloseSerialConnection();
 
+    [[nodiscard]] bool IsReadyToSend() const;
     void SendColors() const;
-
     void Fill(ColorRGB color);
 
 private:
@@ -27,13 +30,15 @@ private:
 
 private:
     std::shared_ptr<spdlog::logger> logger = spdlog::stdout_color_mt("SkydimoDriver");
+    bool m_isInitialized = false;
+    bool m_isReadyToSend = false;
 
     const int m_headerSize = 6;
     int m_serialPort = -1;
 
     std::string m_portName;
-    int m_ledCount;
-    int m_baudRate;
+    int m_ledCount = 0;
+    int m_baudRate = 115200;
 
     std::vector<std::byte> m_buffer;
 };
