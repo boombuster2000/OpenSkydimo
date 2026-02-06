@@ -52,21 +52,45 @@ bool SendCommand(const std::string& command)
     return true;
 }
 
-void FillCommand(ColorRGB color)
+void SendFillCommand(ColorRGB color)
 {
     std::cout << fmt::format("Filling LEDs with RGB{}", color) << std::endl;
     SendCommand(fmt::format("fill {} {} {}", color.r, color.g, color.b));
 }
 
+std::string JoinArgs(const int argc, char* argv[])
+{
+    std::string cmd;
+
+    for (int i = 1; i < argc; ++i)
+    {
+        cmd += argv[i];
+
+        if (i < argc - 1)
+            cmd += " ";
+    }
+
+    return cmd;
+}
+
 int main(const int argc, char* argv[])
 {
     using namespace openskydimo::commands;
+    const std::string cmd = JoinArgs(argc, argv);
 
     CLI::App app{"This program is used to communicate with the skydimo daemon and configure the LEDs."};
     argv = app.ensure_utf8(argv);
 
     ColorRGB fillColorArgs{};
-    AddFillCmd(&app, [&] { FillCommand(fillColorArgs); }, fillColorArgs);
+    AddFillCmd(&app, [&] { SendCommand(cmd); }, fillColorArgs);
+
+    std::string serialPortArg;
+    uint8_t ledCountArg;
+    const auto setCmd = AddSetCmd(&app);
+    AddSetPortCmd(setCmd, [&] { SendCommand(cmd); }, serialPortArg);
+    AddSetCountCmd(setCmd, [&] { SendCommand(cmd); }, ledCountArg);
+
+    AddStartCmd(&app, [&] { SendCommand(cmd); });
 
     CLI11_PARSE(app, argc, argv);
     return 0;

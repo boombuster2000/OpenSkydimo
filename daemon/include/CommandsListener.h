@@ -39,4 +39,6 @@ private:
     std::thread m_listenerThread;
 
     ColorRGB m_fillColorArgs{};
+    std::string m_serialPortArg;
+    uint8_t m_ledCountArg{};
 };
