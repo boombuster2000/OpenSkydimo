@@ -2,16 +2,21 @@
 
 #include <cerrno>
 #include <cstring>
-#include <iostream>
-#include <sstream>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
 #include <utility>
 
+#include "openskydimo/commands.hpp"
+
 CommandsListener::CommandsListener(std::string socketPath, SkydimoDriver& driver)
     : m_socketPath(std::move(socketPath)), m_driver(driver), m_serverFd(-1), m_isServerRunning(false)
 {
+    using namespace openskydimo::commands;
+
+    AddFillCmd(
+        &m_app, [this] { m_driver.Fill(ColorRGB(m_fillColorArgs.r, m_fillColorArgs.g, m_fillColorArgs.b)); },
+        m_fillColorArgs);
 }
 
 CommandsListener::~CommandsListener()
@@ -83,7 +88,7 @@ bool CommandsListener::ShouldStop() const
     return !m_isServerRunning;
 }
 
-void CommandsListener::ListenLoop() const
+void CommandsListener::ListenLoop()
 {
     while (m_isServerRunning)
     {
@@ -102,14 +107,14 @@ void CommandsListener::ListenLoop() const
     }
 }
 
-void CommandsListener::HandleClient(const int clientFd) const
+void CommandsListener::HandleClient(const int clientFd)
 {
     char buffer[1024];
 
     if (const ssize_t bytesRead = read(clientFd, buffer, sizeof(buffer) - 1); bytesRead > 0)
     {
         buffer[bytesRead] = '\0';
- std::string command(buffer);
+        std::string command(buffer);
         if (!command.empty() && command.back() == '\n')
             command.pop_back();
 
@@ -119,26 +124,53 @@ void CommandsListener::HandleClient(const int clientFd) const
     }
 }
 
-std::string CommandsListener::ExecuteCommand(const std::string& command) const
+std::vector<std::string> CommandsListener::SplitCommand(const std::string& command)
 {
-    std::string response = "OK\n";
+    std::vector<std::string> parts;
 
-    if (command.substr(0, 4) == "fill")
+    std::string part;
+    for (int i = 0; i < command.length(); i++)
     {
-        const std::string color = command.substr(5);
-
-        std::istringstream iss(color);
-
-        if (int r, g, b; iss >> r >> g >> b && r >= 0 && r <= 255 && g >= 0 && g <= 255 && b >= 0 && b <= 255)
+        if (command[i] == ' ')
         {
-            const ColorRGB rgb(r, g, b);
-            m_driver.Fill(rgb);
+            parts.insert(parts.begin(), part);
+            part.clear();
+            continue;
         }
-        else
+
+        if (i == command.length() - 1)
         {
-            response = "ERROR: Invalid RGB color format. Expected: fill <r> <g> <b> where r, g, b are integers 0-255\n";
+            part += command[i];
+            parts.insert(parts.begin(), part);
+            continue;
         }
+
+        part += command[i];
     }
 
-    return response;
+    return parts;
+}
+
+std::string CommandsListener::ExecuteCommand(const std::string& command)
+{
+    logger->info("Executing command {}", command);
+
+    try
+    {
+
+        std::vector<std::string> args = SplitCommand(command);
+        m_app.parse(args);
+
+        return "OK\n";
+    }
+    catch (const CLI::ParseError& e)
+    {
+        logger->error("Error executing command: {}", e.what());
+        return "ERROR: " + std::string(e.what()) + "\n";
+    }
+    catch (const std::exception& e)
+    {
+        logger->error("Error executing command: {}", e.what());
+        return "ERROR: " + std::string(e.what()) + "\n";
+    }
 }

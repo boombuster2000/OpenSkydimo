@@ -7,8 +7,10 @@
 #include <unistd.h>
 
 #include "CLI/CLI.hpp"
-#include "openskydimo/types.h"
 #include "spdlog/fmt/bundled/format.h"
+
+#include "openskydimo/commands.hpp"
+#include "openskydimo/types.h"
 
 bool SendCommand(const std::string& command)
 {
@@ -43,7 +45,7 @@ bool SendCommand(const std::string& command)
     if (const ssize_t bytesRead = read(sockFd, buffer, sizeof(buffer) - 1); bytesRead > 0)
     {
         buffer[bytesRead] = '\0';
-        std::cout << buffer;
+        std::cout << "[SERVER] - " << buffer;
     }
 
     close(sockFd);
@@ -58,15 +60,13 @@ void FillCommand(ColorRGB color)
 
 int main(const int argc, char* argv[])
 {
+    using namespace openskydimo::commands;
+
     CLI::App app{"This program is used to communicate with the skydimo daemon and configure the LEDs."};
     argv = app.ensure_utf8(argv);
 
-    const auto fill_cmd = app.add_subcommand("fill", "Sets all the LEDs to a single color");
-    int r, g, b;
-    fill_cmd->add_option("r", r, "Red (0-255)")->required()->check(CLI::Range(0, 255));
-    fill_cmd->add_option("g", g, "Green (0-255)")->required()->check(CLI::Range(0, 255));
-    fill_cmd->add_option("b", b, "Blue (0-255)")->required()->check(CLI::Range(0, 255));
-    fill_cmd->callback([&] { FillCommand(ColorRGB(r, g, b)); });
+    ColorRGB fillColorArgs{};
+    AddFillCmd(&app, [&] { FillCommand(fillColorArgs); }, fillColorArgs);
 
     CLI11_PARSE(app, argc, argv);
     return 0;

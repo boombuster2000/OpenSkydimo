@@ -2,10 +2,13 @@
 
 #include <atomic>
 #include <thread>
+#include <vector>
 
-#include "SkydimoDriver.h"
+#include "CLI/CLI.hpp"
 #include "spdlog/sinks/stdout_color_sinks-inl.h"
 #include "spdlog/spdlog.h"
+
+#include "SkydimoDriver.h"
 
 class CommandsListener
 {
@@ -17,14 +20,16 @@ public:
     void Stop();
     [[nodiscard]] bool ShouldStop() const;
 
-    void ListenLoop() const;
+    void ListenLoop();
 
-    void HandleClient(int clientFd) const;
+    void HandleClient(int clientFd);
 
-    [[nodiscard]] std::string ExecuteCommand(const std::string& command) const;
+    static std::vector<std::string> SplitCommand(const std::string& command);
+    [[nodiscard]] std::string ExecuteCommand(const std::string& command);
 
 private:
     std::shared_ptr<spdlog::logger> logger = spdlog::stdout_color_mt("CommandsListener");
+    CLI::App m_app;
 
     std::string m_socketPath;
     SkydimoDriver& m_driver;
@@ -32,4 +37,6 @@ private:
     int m_serverFd;
     std::atomic<bool> m_isServerRunning;
     std::thread m_listenerThread;
+
+    ColorRGB m_fillColorArgs{};
 };
