@@ -90,6 +90,7 @@ int main(const int argc, char* argv[])
     AddSetCountCmd(setCmd, [&] { SendCommand(cmd); }, cmdArgs.ledCount);
 
     AddStartCmd(&app, [&] { SendCommand(cmd); });
+    AddStopCmd(&app, [&] { SendCommand(cmd); });
 
     CLI11_PARSE(app, argc, argv);
     return 0;

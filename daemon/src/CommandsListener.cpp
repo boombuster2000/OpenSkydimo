@@ -21,6 +21,7 @@ CommandsListener::CommandsListener(std::string socketPath, SkydimoDriver& driver
     AddSetCountCmd(setCmd, [this] { m_driver.SetLedCount(m_cmdArgs.ledCount); }, m_cmdArgs.ledCount);
 
     AddStartCmd(&m_app, [this] { m_driver.OpenSerialConnection(); });
+    AddStopCmd(&m_app, [this] { m_driver.CloseSerialConnection(); });
 }
 
 CommandsListener::~CommandsListener()
