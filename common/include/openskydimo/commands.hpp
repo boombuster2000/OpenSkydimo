@@ -5,6 +5,13 @@
 namespace openskydimo::commands
 {
 
+struct Args
+{
+    ColorRGB fillColor{};
+    std::string serialPort;
+    uint8_t ledCount;
+};
+
 inline CLI::App* AddSetCmd(CLI::App* app)
 {
     return app->add_subcommand("set", "Set options for LED driver")->require_subcommand(1);

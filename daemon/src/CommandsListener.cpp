@@ -14,13 +14,11 @@ CommandsListener::CommandsListener(std::string socketPath, SkydimoDriver& driver
 {
     using namespace openskydimo::commands;
 
-    AddFillCmd(
-        &m_app, [this] { m_driver.Fill(ColorRGB(m_fillColorArgs.r, m_fillColorArgs.g, m_fillColorArgs.b)); },
-        m_fillColorArgs);
+    AddFillCmd(&m_app, [this] { m_driver.Fill(m_cmdArgs.fillColor); }, m_cmdArgs.fillColor);
 
     const auto setCmd = AddSetCmd(&m_app);
-    AddSetPortCmd(setCmd, [this] { m_driver.SetSerialPort(m_serialPortArg); }, m_serialPortArg);
-    AddSetCountCmd(setCmd, [this] { m_driver.SetLedCount(m_ledCountArg); }, m_ledCountArg);
+    AddSetPortCmd(setCmd, [this] { m_driver.SetSerialPort(m_cmdArgs.serialPort); }, m_cmdArgs.serialPort);
+    AddSetCountCmd(setCmd, [this] { m_driver.SetLedCount(m_cmdArgs.ledCount); }, m_cmdArgs.ledCount);
 
     AddStartCmd(&m_app, [this] { m_driver.OpenSerialConnection(); });
 }

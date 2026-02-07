@@ -81,14 +81,13 @@ int main(const int argc, char* argv[])
     CLI::App app{"This program is used to communicate with the skydimo daemon and configure the LEDs."};
     argv = app.ensure_utf8(argv);
 
-    ColorRGB fillColorArgs{};
-    AddFillCmd(&app, [&] { SendCommand(cmd); }, fillColorArgs);
+    Args cmdArgs;
 
-    std::string serialPortArg;
-    uint8_t ledCountArg;
+    AddFillCmd(&app, [&] { SendCommand(cmd); }, cmdArgs.fillColor);
+
     const auto setCmd = AddSetCmd(&app);
-    AddSetPortCmd(setCmd, [&] { SendCommand(cmd); }, serialPortArg);
-    AddSetCountCmd(setCmd, [&] { SendCommand(cmd); }, ledCountArg);
+    AddSetPortCmd(setCmd, [&] { SendCommand(cmd); }, cmdArgs.serialPort);
+    AddSetCountCmd(setCmd, [&] { SendCommand(cmd); }, cmdArgs.ledCount);
 
     AddStartCmd(&app, [&] { SendCommand(cmd); });
 

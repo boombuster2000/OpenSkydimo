@@ -9,6 +9,7 @@
 #include "spdlog/spdlog.h"
 
 #include "SkydimoDriver.h"
+#include "openskydimo/commands.hpp"
 
 class CommandsListener
 {
@@ -38,7 +39,5 @@ private:
     std::atomic<bool> m_isServerRunning;
     std::thread m_listenerThread;
 
-    ColorRGB m_fillColorArgs{};
-    std::string m_serialPortArg;
-    uint8_t m_ledCountArg{};
+    openskydimo::commands::Args m_cmdArgs;
 };
