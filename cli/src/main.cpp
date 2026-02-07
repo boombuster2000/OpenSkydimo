@@ -1,11 +1,20 @@
 #include <cstring>
+
+#include <functional>
 #include <iostream>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
 
-bool SendCommand(const std::string& socketPath, const std::string& command)
+#include "CLI/CLI.hpp"
+#include "spdlog/fmt/bundled/format.h"
+
+#include "openskydimo/commands.hpp"
+#include "openskydimo/types.h"
+
+bool SendCommand(const std::string& command)
 {
+    const std::string socketPath = "/tmp/openskydimo.sock";
     const int sockFd = socket(AF_UNIX, SOCK_STREAM, 0);
 
     if (sockFd < 0)
@@ -27,75 +36,62 @@ bool SendCommand(const std::string& socketPath, const std::string& command)
     }
 
     // Send command
-    std::string msg = command + "\n";
+    const std::string msg = command + "\n";
     write(sockFd, msg.c_str(), msg.length());
 
     // Wait for response
     char buffer[128];
-    ssize_t bytesRead = read(sockFd, buffer, sizeof(buffer) - 1);
-    if (bytesRead > 0)
+
+    if (const ssize_t bytesRead = read(sockFd, buffer, sizeof(buffer) - 1); bytesRead > 0)
     {
         buffer[bytesRead] = '\0';
-        std::cout << buffer;
+        std::cout << "[SERVER] - " << buffer;
     }
+
     close(sockFd);
     return true;
 }
 
-void PrintUsage(const char* programName)
+void SendFillCommand(ColorRGB color)
 {
-    std::cout << "Usage: " << programName << " <command> [args...]\n"
-              << "\nCommands:\n"
-              << "  fill <r,g,b>        Fill all LEDs with color (e.g., fill 255,255,255)\n"
-              << "  brightness <0-255>  Set brightness level\n"
-              << "  pattern <name>      Set pattern (e.g., rainbow, pulse)\n"
-              << "  off                 Turn off all LEDs\n"
-              << "\nExamples:\n"
-              << "  " << programName << " fill 255,0,0\n"
-              << "  " << programName << " brightness 128\n"
-              << "  " << programName << " pattern rainbow\n";
+    std::cout << fmt::format("Filling LEDs with RGB{}", color) << std::endl;
+    SendCommand(fmt::format("fill {} {} {}", color.r, color.g, color.b));
+}
+
+std::string JoinArgs(const int argc, char* argv[])
+{
+    std::string cmd;
+
+    for (int i = 1; i < argc; ++i)
+    {
+        cmd += argv[i];
+
+        if (i < argc - 1)
+            cmd += " ";
+    }
+
+    return cmd;
 }
 
 int main(const int argc, char* argv[])
 {
-    const std::string socketPath = "/tmp/openskydimo.sock";
+    using namespace openskydimo::commands;
+    const std::string cmd = JoinArgs(argc, argv);
 
-    if (argc < 2)
-    {
-        PrintUsage(argv[0]);
-        return 1;
-    }
+    CLI::App app{"This program is used to communicate with the skydimo daemon and configure the LEDs."};
+    argv = app.ensure_utf8(argv);
 
-    const std::string cmd = argv[1];
-    std::string command;
+    Args cmdArgs;
 
-    if (cmd == "fill" && argc == 3)
-    {
-        command = "FILL " + std::string(argv[2]);
-    }
-    else if (cmd == "brightness" && argc == 3)
-    {
-        command = "BRIGHTNESS " + std::string(argv[2]);
-    }
-    else if (cmd == "pattern" && argc == 3)
-    {
-        command = "PATTERN " + std::string(argv[2]);
-    }
-    else if (cmd == "off" && argc == 2)
-    {
-        command = "OFF";
-    }
-    else
-    {
-        std::cerr << "Invalid command or arguments\n";
-        PrintUsage(argv[0]);
-        return 1;
-    }
+    AddFillCmd(&app, [&] { SendCommand(cmd); }, cmdArgs.fillColor);
 
-    if (!SendCommand(socketPath, command))
-    {
-        return 1;
-    }
+    const auto setCmd = AddSetCmd(&app);
+    AddSetPortCmd(setCmd, [&] { SendCommand(cmd); }, cmdArgs.serialPort);
+    AddSetCountCmd(setCmd, [&] { SendCommand(cmd); }, cmdArgs.ledCount);
 
+    AddStartCmd(&app, [&] { SendCommand(cmd); });
+    AddStopCmd(&app, [&] { SendCommand(cmd); });
+
+    CLI11_PARSE(app, argc, argv);
     return 0;
 }

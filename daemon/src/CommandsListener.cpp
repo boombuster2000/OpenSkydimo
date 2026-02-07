@@ -2,15 +2,26 @@
 
 #include <cerrno>
 #include <cstring>
-#include <iostream>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
 #include <utility>
 
+#include "openskydimo/commands.hpp"
+
 CommandsListener::CommandsListener(std::string socketPath, SkydimoDriver& driver)
     : m_socketPath(std::move(socketPath)), m_driver(driver), m_serverFd(-1), m_isServerRunning(false)
 {
+    using namespace openskydimo::commands;
+
+    AddFillCmd(&m_app, [this] { m_driver.Fill(m_cmdArgs.fillColor); }, m_cmdArgs.fillColor);
+
+    const auto setCmd = AddSetCmd(&m_app);
+    AddSetPortCmd(setCmd, [this] { m_driver.SetSerialPort(m_cmdArgs.serialPort); }, m_cmdArgs.serialPort);
+    AddSetCountCmd(setCmd, [this] { m_driver.SetLedCount(m_cmdArgs.ledCount); }, m_cmdArgs.ledCount);
+
+    AddStartCmd(&m_app, [this] { m_driver.OpenSerialConnection(); });
+    AddStopCmd(&m_app, [this] { m_driver.CloseSerialConnection(); });
 }
 
 CommandsListener::~CommandsListener()
@@ -101,35 +112,70 @@ void CommandsListener::ListenLoop()
     }
 }
 
-void CommandsListener::HandleClient(int clientFd)
+void CommandsListener::HandleClient(const int clientFd)
 {
     char buffer[1024];
-    ssize_t bytesRead = read(clientFd, buffer, sizeof(buffer) - 1);
 
-    if (bytesRead > 0)
+    if (const ssize_t bytesRead = read(clientFd, buffer, sizeof(buffer) - 1); bytesRead > 0)
     {
         buffer[bytesRead] = '\0';
-
-        // Remove trailing newline if present
         std::string command(buffer);
         if (!command.empty() && command.back() == '\n')
-        {
             command.pop_back();
-        }
 
-        // Call the callback with the command
-        ExecuteCommand(command);
+        const auto response = ExecuteCommand(command);
 
-        // Send acknowledgment
-        const auto response = "OK\n";
-        write(clientFd, response, strlen(response));
+        write(clientFd, response.c_str(), strlen(response.c_str()));
     }
 }
 
-void CommandsListener::ExecuteCommand(const std::string& command) const
+std::vector<std::string> CommandsListener::SplitCommand(const std::string& command)
 {
-    if (command.substr(0, 4) == "FILL")
+    std::vector<std::string> parts;
+
+    std::string part;
+    for (int i = 0; i < command.length(); i++)
     {
-        m_driver.Fill(ColorRGB(255, 0, 0));
+        if (command[i] == ' ')
+        {
+            parts.insert(parts.begin(), part);
+            part.clear();
+            continue;
+        }
+
+        if (i == command.length() - 1)
+        {
+            part += command[i];
+            parts.insert(parts.begin(), part);
+            continue;
+        }
+
+        part += command[i];
+    }
+
+    return parts;
+}
+
+std::string CommandsListener::ExecuteCommand(const std::string& command)
+{
+    logger->info("Executing command {}", command);
+
+    try
+    {
+
+        std::vector<std::string> args = SplitCommand(command);
+        m_app.parse(args);
+
+        return "OK\n";
+    }
+    catch (const CLI::ParseError& e)
+    {
+        logger->error("Error executing command: {}", e.what());
+        return "ERROR: " + std::string(e.what()) + "\n";
+    }
+    catch (const std::exception& e)
+    {
+        logger->error("Error executing command: {}", e.what());
+        return "ERROR: " + std::string(e.what()) + "\n";
     }
 }

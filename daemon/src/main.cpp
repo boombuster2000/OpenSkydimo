@@ -4,16 +4,15 @@
 
 int main()
 {
-    SkydimoDriver driver("/dev/ttyUSB0", 60);
+    SkydimoDriver driver;
     CommandsListener listener("/tmp/openskydimo.sock", driver);
-
-    driver.OpenSerialConnection();
-    driver.Fill(ColorRGB(255, 255, 255));
 
     listener.Start();
     while (!listener.ShouldStop())
     {
-        driver.SendColors();
+        if (driver.IsReadyToSend())
+            driver.SendColors();
+
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 }
