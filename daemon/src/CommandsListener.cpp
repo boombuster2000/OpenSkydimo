@@ -104,9 +104,13 @@ void CommandsListener::ListenLoop()
 
         if (clientFd < 0)
         {
-            if (m_isServerRunning)
-                logger->error("Error accepting client connection: {}", strerror(errno));
+            if (!m_isServerRunning)
+                break;
 
+            if (errno == EINTR)
+                continue;
+
+            logger->error("Error accepting client connection: {}", strerror(errno));
             break;
         }
 
