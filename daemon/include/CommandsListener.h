@@ -28,7 +28,9 @@ public:
     [[nodiscard]] std::string ExecuteCommand(const std::string& command);
 
 private:
-    std::shared_ptr<spdlog::logger> logger = spdlog::stdout_color_mt("CommandsListener");
+    std::shared_ptr<spdlog::logger> logger =
+        spdlog::get("CommandsListener") ? spdlog::get("CommandsListener") : spdlog::stdout_color_mt("CommandsListener");
+
     CLI::App m_app;
 
     std::string m_socketPath;

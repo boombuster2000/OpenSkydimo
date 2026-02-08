@@ -30,7 +30,8 @@ private:
     void AddHeaderToBuffer();
 
 private:
-    std::shared_ptr<spdlog::logger> logger = spdlog::stdout_color_mt("SkydimoDriver");
+    std::shared_ptr<spdlog::logger> logger =
+        spdlog::get("SkydimoDriver") ? spdlog::get("SkydimoDriver") : spdlog::stdout_color_mt("SkydimoDriver");
 
     // Thread synchronization - mutable to allow locking in const methods
     mutable std::mutex m_mutex;

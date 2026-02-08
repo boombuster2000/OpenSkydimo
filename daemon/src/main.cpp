@@ -19,7 +19,9 @@ void SignalHandler(const int signal)
 
 int main()
 {
-    const auto logger = spdlog::stdout_color_mt("Daemon");
+    const std::shared_ptr<spdlog::logger> logger =
+        spdlog::get("Daemon") ? spdlog::get("Daemon") : spdlog::stdout_color_mt("Daemon");
+
     SkydimoDriver driver;
     CommandsListener listener("/tmp/openskydimo.sock", driver);
 
