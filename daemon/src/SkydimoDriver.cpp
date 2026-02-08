@@ -48,7 +48,7 @@ bool SkydimoDriver::OpenSerialConnection()
 
     if (m_serialPort < 0)
     {
-        logger->error("Unabled to open serial port {}", m_portName);
+        logger->error("Unable to open serial port {}", m_portName);
         return false;
     }
 
@@ -56,7 +56,7 @@ bool SkydimoDriver::OpenSerialConnection()
 
     if (tcgetattr(m_serialPort, &tty) != 0)
     {
-        logger->error("Unabled to get tty attributes");
+        logger->error("Unable to get tty attributes");
         close(m_serialPort);
         return false;
     }
