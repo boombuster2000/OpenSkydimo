@@ -134,7 +134,7 @@ void CommandsListener::HandleClient(const int clientFd)
 
         const auto response = ExecuteCommand(command);
 
-        write(clientFd, response.c_str(), strlen(response.c_str()));
+        write(clientFd, response.c_str(), response.size());
     }
 }
 
