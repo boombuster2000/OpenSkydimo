@@ -7,6 +7,8 @@
 #include <unistd.h>
 #include <utility>
 
+#include "CLI/CLI.hpp"
+
 #include "openskydimo/commands.hpp"
 
 CommandsListener::CommandsListener(std::string socketPath, SkydimoDriver& driver)

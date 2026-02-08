@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-#include "spdlog/sinks/stdout_color_sinks-inl.h"
+#include "spdlog/sinks/stdout_color_sinks.h"
 #include "spdlog/spdlog.h"
 
 class SkydimoDriver
