@@ -52,10 +52,7 @@ AllowShortFunctionsOnASingleLine: None
 AllowShortIfStatementsOnASingleLine: Never
 AllowShortLambdasOnASingleLine: All
 AllowShortLoopsOnASingleLine: false
-AlwaysBreakAfterDefinitionReturnType: None
-AlwaysBreakAfterReturnType: None
 AlwaysBreakBeforeMultilineStrings: false
-AlwaysBreakTemplateDeclarations: Yes # Changed from Multiline
 AttributeMacros:
   - __capability
 BinPackArguments: true
@@ -92,6 +89,10 @@ BreakBeforeTernaryOperators: true
 BreakConstructorInitializers: BeforeColon
 BreakInheritanceList: BeforeColon
 BreakStringLiterals: true
+# UPDATED: Replaces deprecated AlwaysBreakAfterDefinitionReturnType and AlwaysBreakAfterReturnType
+BreakAfterReturnType: Automatic
+# UPDATED: Replaces deprecated AlwaysBreakTemplateDeclarations
+BreakTemplateDeclarations: Yes
 ColumnLimit: 120
 CommentPragmas: '^ IWYU pragma:'
 CompactNamespaces: false
@@ -110,18 +111,16 @@ ForEachMacros:
   - BOOST_FOREACH
 IfMacros:
   - KJ_IF_MAYBE
+# UPDATED: Simplified include categories, removed LLVM-specific patterns
+# Customize these patterns for your project structure (common, daemon, cli modules)
 IncludeBlocks: Preserve
 IncludeCategories:
-  - Regex: '^"(llvm|llvm-c|clang|clang-c)/'
-    Priority: 2
-    SortPriority: 0
-    CaseSensitive: false
-  - Regex: '^(<|"(gtest|gmock|isl|json)/)'
-    Priority: 3
-    SortPriority: 0
-    CaseSensitive: false
-  - Regex: '.*'
+  - Regex: '^"'
     Priority: 1
+    SortPriority: 0
+    CaseSensitive: false
+  - Regex: '^<'
+    Priority: 2
     SortPriority: 0
     CaseSensitive: false
 IncludeIsMainRegex: '(Test)?$'
@@ -136,7 +135,8 @@ IndentRequiresClause: false # Changed from true
 IndentWidth: 4
 IndentWrappedFunctionNames: false
 InsertBraces: false
-InsertNewlineAtEOF: false
+# UPDATED: Enable to ensure POSIX-compliant line endings
+InsertNewlineAtEOF: true
 InsertTrailingCommas: None
 IntegerLiteralSeparator:
   Binary: 0
