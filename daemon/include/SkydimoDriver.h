@@ -39,7 +39,7 @@ private:
     bool m_isInitialized = false;
     bool m_isReadyToSend = false;
 
-    const int m_headerSize = 6;
+    static constexpr int m_headerSize = 6;
     int m_serialPort = -1;
 
     std::string m_portName;
