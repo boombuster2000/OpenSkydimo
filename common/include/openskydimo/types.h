@@ -2,10 +2,8 @@
 
 #include <algorithm>
 #include <cstddef>
-#include <string>
 
-#include "spdlog/fmt/bundled/base.h"
-#include "spdlog/fmt/bundled/format.h"
+#include "spdlog/fmt/fmt.h"
 
 struct ColorRGB
 {
