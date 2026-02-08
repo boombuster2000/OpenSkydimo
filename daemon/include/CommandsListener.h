@@ -20,6 +20,7 @@ public:
     void Stop();
     [[nodiscard]] bool ShouldStop() const;
 
+private:
     void ListenLoop();
 
     void HandleClient(int clientFd);
