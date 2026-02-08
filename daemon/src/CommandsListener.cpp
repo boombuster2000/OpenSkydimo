@@ -37,7 +37,10 @@ void CommandsListener::Start()
     m_serverFd = socket(AF_UNIX, SOCK_STREAM, 0);
 
     if (m_serverFd < 0)
+    {
         logger->error("Error creating socket: {}", strerror(errno));
+        return;
+    }
 
     unlink(m_socketPath.c_str());
 
