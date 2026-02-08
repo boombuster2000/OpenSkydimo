@@ -1,5 +1,6 @@
 #include <cstring>
 
+#include <cerrno>
 #include <functional>
 #include <iostream>
 #include <sys/socket.h>
@@ -15,9 +16,32 @@
 bool SendCommand(const std::string& command)
 {
     const std::string socketPath = "/tmp/openskydimo.sock";
-    const int sockFd = socket(AF_UNIX, SOCK_STREAM, 0);
 
-    if (sockFd < 0)
+    // RAII wrapper for socket file descriptor
+    struct SocketGuard
+    {
+        int fd;
+        explicit SocketGuard(const int fd_) : fd(fd_)
+        {
+        }
+
+        ~SocketGuard()
+        {
+            if (fd >= 0)
+                close(fd);
+        }
+
+        SocketGuard(const SocketGuard&) = delete;
+        SocketGuard& operator=(const SocketGuard&) = delete;
+        explicit operator int() const
+        {
+            return fd;
+        }
+    };
+
+    const SocketGuard sockFd(socket(AF_UNIX, SOCK_STREAM, 0));
+
+    if (static_cast<int>(sockFd) < 0)
     {
         std::cerr << "Failed to create socket" << std::endl;
         return false;
@@ -28,27 +52,50 @@ bool SendCommand(const std::string& command)
     addr.sun_family = AF_UNIX;
     strncpy(addr.sun_path, socketPath.c_str(), sizeof(addr.sun_path) - 1);
 
-    if (connect(sockFd, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) < 0)
+    if (connect(static_cast<int>(sockFd), reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) < 0)
     {
         std::cerr << "Failed to connect (is daemon running?)" << std::endl;
-        close(sockFd);
         return false;
     }
 
-    // Send command
+    // Send command with robust blocking write loop
     const std::string msg = command + "\n";
-    write(sockFd, msg.c_str(), msg.length());
+    size_t totalWritten = 0;
+    const size_t msgLen = msg.length();
+
+    while (totalWritten < msgLen)
+    {
+        const ssize_t bytesWritten = write(static_cast<int>(sockFd), msg.c_str() + totalWritten, msgLen - totalWritten);
+
+        if (bytesWritten < 0)
+        {
+            std::cerr << "Write error: " << strerror(errno) << std::endl;
+            return false;
+        }
+
+        if (bytesWritten == 0)
+        {
+            std::cerr << "Write returned 0 (connection closed?)" << std::endl;
+            return false;
+        }
+
+        totalWritten += static_cast<size_t>(bytesWritten);
+    }
 
     // Wait for response
     char buffer[128];
 
-    if (const ssize_t bytesRead = read(sockFd, buffer, sizeof(buffer) - 1); bytesRead > 0)
+    if (const ssize_t bytesRead = read(static_cast<int>(sockFd), buffer, sizeof(buffer) - 1); bytesRead > 0)
     {
         buffer[bytesRead] = '\0';
         std::cout << "[SERVER] - " << buffer;
     }
+    else if (bytesRead < 0)
+    {
+        std::cerr << "Read error: " << strerror(errno) << std::endl;
+        return false;
+    }
 
-    close(sockFd);
     return true;
 }
 
