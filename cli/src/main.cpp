@@ -48,7 +48,6 @@ bool SendCommand(const std::string& command)
     }
 
     sockaddr_un addr{};
-    memset(&addr, 0, sizeof(addr));
     addr.sun_family = AF_UNIX;
     strncpy(addr.sun_path, socketPath.c_str(), sizeof(addr.sun_path) - 1);
 
