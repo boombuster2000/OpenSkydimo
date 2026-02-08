@@ -29,7 +29,7 @@ struct ColorRGB
 template <>
 struct fmt::formatter<ColorRGB> : formatter<std::string>
 {
-    static auto format(const ColorRGB& my, const format_context& ctx) -> decltype(ctx.out())
+    auto format(const ColorRGB& my, format_context& ctx) const -> decltype(ctx.out())
     {
         return format_to(ctx.out(), "({},{},{})", static_cast<int>(my.r), static_cast<int>(my.g),
                          static_cast<int>(my.b));
