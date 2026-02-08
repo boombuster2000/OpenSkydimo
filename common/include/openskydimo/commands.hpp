@@ -9,7 +9,7 @@ struct Args
 {
     ColorRGB fillColor{};
     std::string serialPort;
-    uint8_t ledCount;
+    uint8_t ledCount{};
 };
 
 inline CLI::App* AddSetCmd(CLI::App* app)
