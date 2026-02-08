@@ -76,10 +76,10 @@ std::string JoinArgs(const int argc, char* argv[])
 int main(const int argc, char* argv[])
 {
     using namespace openskydimo::commands;
-    const std::string cmd = JoinArgs(argc, argv);
-
     CLI::App app{"This program is used to communicate with the skydimo daemon and configure the LEDs."};
     argv = app.ensure_utf8(argv);
+
+    const std::string cmd = JoinArgs(argc, argv);
 
     Args cmdArgs;
 
