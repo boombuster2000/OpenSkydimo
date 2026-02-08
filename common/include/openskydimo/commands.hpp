@@ -1,6 +1,11 @@
 #pragma once
+
+#include <cstdint>
+#include <functional>
+#include <string>
+
 #include "CLI/App.hpp"
-#include "types.h"
+#include "openskydimo/types.h"
 
 namespace openskydimo::commands
 {
