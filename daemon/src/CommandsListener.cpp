@@ -136,7 +136,7 @@ void CommandsListener::HandleClient(const int clientFd)
     }
 }
 
-std::vector<std::string> CommandsListener::SplitCommand(const std::string& command)
+std::vector<std::string> CommandsListener::SplitCommandReversed(const std::string& command)
 {
     std::vector<std::string> parts;
 
@@ -170,7 +170,7 @@ std::string CommandsListener::ExecuteCommand(const std::string& command)
     try
     {
 
-        std::vector<std::string> args = SplitCommand(command);
+        std::vector<std::string> args = SplitCommandReversed(command);
         m_app.parse(args);
 
         return "OK\n";

@@ -25,7 +25,7 @@ public:
 
     void HandleClient(int clientFd);
 
-    static std::vector<std::string> SplitCommand(const std::string& command);
+    static std::vector<std::string> SplitCommandReversed(const std::string& command);
     [[nodiscard]] std::string ExecuteCommand(const std::string& command);
 
 private:
