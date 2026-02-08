@@ -7,27 +7,37 @@
 
 SkydimoDriver::~SkydimoDriver()
 {
+    std::lock_guard lock(m_mutex);
     if (m_serialPort >= 0)
-        CloseSerialConnection();
+    {
+        close(m_serialPort);
+        m_serialPort = -1;
+    }
 }
 
 void SkydimoDriver::SetSerialPort(const std::string& portName)
 {
+    std::lock_guard lock(m_mutex);
     m_portName = portName;
 }
 
 void SkydimoDriver::SetBaudRate(const int baudRate)
 {
+    std::lock_guard lock(m_mutex);
     m_baudRate = baudRate;
 }
 
 void SkydimoDriver::SetLedCount(const int ledCount)
 {
+    std::lock_guard lock(m_mutex);
     m_ledCount = ledCount;
+    AddHeaderToBuffer();
 }
 
 bool SkydimoDriver::OpenSerialConnection()
 {
+    std::lock_guard lock(m_mutex);
+
     logger->info("Opening serial port {}", m_portName);
 
     if (m_portName.empty())
@@ -41,8 +51,6 @@ bool SkydimoDriver::OpenSerialConnection()
         logger->error("LED count is set to 0");
         return false;
     }
-
-    AddHeaderToBuffer();
 
     m_serialPort = open(m_portName.c_str(), O_RDWR | O_NOCTTY);
 
@@ -58,6 +66,7 @@ bool SkydimoDriver::OpenSerialConnection()
     {
         logger->error("Unable to get tty attributes");
         close(m_serialPort);
+        m_serialPort = -1;
         return false;
     }
 
@@ -111,6 +120,7 @@ bool SkydimoDriver::OpenSerialConnection()
     default:
         logger->error("Unsupported baud rate: {}", m_baudRate);
         close(m_serialPort);
+        m_serialPort = -1;
         return false;
     }
 
@@ -122,6 +132,7 @@ bool SkydimoDriver::OpenSerialConnection()
     {
         logger->error("Unable to set tty attributes");
         close(m_serialPort);
+        m_serialPort = -1;
         return false;
     }
 
@@ -131,6 +142,8 @@ bool SkydimoDriver::OpenSerialConnection()
 
 void SkydimoDriver::CloseSerialConnection()
 {
+    std::lock_guard lock(m_mutex);
+
     logger->info("Closing serial port {}", m_portName);
     if (m_serialPort >= 0)
     {
@@ -143,11 +156,14 @@ void SkydimoDriver::CloseSerialConnection()
 
 bool SkydimoDriver::IsReadyToSend() const
 {
+    std::lock_guard lock(m_mutex);
     return m_isReadyToSend;
 }
 
 void SkydimoDriver::SendColors() const
 {
+    std::lock_guard lock(m_mutex);
+
     if (!m_isReadyToSend)
     {
         logger->debug("Not ready to send colors");
@@ -170,7 +186,15 @@ void SkydimoDriver::SendColors() const
 
 void SkydimoDriver::Fill(const ColorRGB color)
 {
+    std::lock_guard lock(m_mutex);
     logger->debug("Filling {} LEDs with RGB{}", m_ledCount, color);
+
+    if (m_buffer.size() < (m_headerSize + m_ledCount * 3))
+    {
+        logger->error("Insufficient buffer size");
+        return;
+    }
+
     int offset = m_headerSize;
 
     for (int i = 0; i < m_ledCount; i++)
@@ -183,6 +207,10 @@ void SkydimoDriver::Fill(const ColorRGB color)
 
 void SkydimoDriver::AddHeaderToBuffer()
 {
+    // Note: This is a private method called only from SetLedCount,
+    // which already holds the lock, so no additional lock needed here.
+    // If you call this from elsewhere, ensure the caller holds m_mutex.
+
     const size_t bufferSize = m_headerSize + (m_ledCount * 3);
     m_buffer.resize(bufferSize);
 

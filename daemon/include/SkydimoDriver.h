@@ -1,6 +1,7 @@
 #pragma once
 #include "openskydimo/types.h"
 
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -30,6 +31,10 @@ private:
 
 private:
     std::shared_ptr<spdlog::logger> logger = spdlog::stdout_color_mt("SkydimoDriver");
+
+    // Thread synchronization - mutable to allow locking in const methods
+    mutable std::mutex m_mutex;
+
     bool m_isInitialized = false;
     bool m_isReadyToSend = false;
 
