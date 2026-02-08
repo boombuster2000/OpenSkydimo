@@ -99,12 +99,6 @@ bool SendCommand(const std::string& command)
     return true;
 }
 
-void SendFillCommand(ColorRGB color)
-{
-    std::cout << fmt::format("Filling LEDs with RGB{}", color) << std::endl;
-    SendCommand(fmt::format("fill {} {} {}", color.r, color.g, color.b));
-}
-
 std::string JoinArgs(const int argc, char* argv[])
 {
     std::string cmd;
