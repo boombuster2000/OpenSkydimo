@@ -7,6 +7,9 @@
 
 #include "spdlog/sinks/stdout_color_sinks.h"
 #include "spdlog/spdlog.h"
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
 
 class SkydimoDriver
 {
@@ -28,6 +31,9 @@ public:
 
 private:
     void AddHeaderToBuffer();
+
+    friend void to_json(json& j, const SkydimoDriver& driver);
+    friend void from_json(const json& j, SkydimoDriver& driver);
 
 private:
     std::shared_ptr<spdlog::logger> logger =
