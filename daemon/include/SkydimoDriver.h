@@ -9,14 +9,17 @@
 #include "spdlog/spdlog.h"
 #include <nlohmann/json.hpp>
 
-using json = nlohmann::json;
-
 class SkydimoDriver
 {
 
 public:
     SkydimoDriver() = default;
     ~SkydimoDriver();
+
+    SkydimoDriver(SkydimoDriver&& other) noexcept;
+
+    SkydimoDriver(const SkydimoDriver&) = delete;
+    SkydimoDriver& operator=(const SkydimoDriver&) = delete;
 
     void SetSerialPort(const std::string& portName);
     void SetBaudRate(int baudRate);
@@ -32,8 +35,7 @@ public:
 private:
     void AddHeaderToBuffer();
 
-    friend void to_json(json& j, const SkydimoDriver& driver);
-    friend void from_json(const json& j, SkydimoDriver& driver);
+    friend void to_json(nlohmann::json& j, const SkydimoDriver& driver);
 
 private:
     std::shared_ptr<spdlog::logger> logger =

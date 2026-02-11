@@ -15,6 +15,13 @@ SkydimoDriver::~SkydimoDriver()
     }
 }
 
+SkydimoDriver::SkydimoDriver(SkydimoDriver&& other) noexcept
+    : logger(std::move(other.logger)), m_isReadyToSend(other.m_isReadyToSend), m_serialPort(other.m_serialPort),
+      m_portName(std::move(other.m_portName)), m_ledCount(other.m_ledCount), m_baudRate(other.m_baudRate),
+      m_buffer(std::move(other.m_buffer))
+{
+}
+
 void SkydimoDriver::SetSerialPort(const std::string& portName)
 {
     std::lock_guard lock(m_mutex);
