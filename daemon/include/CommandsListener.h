@@ -25,11 +25,10 @@ private:
 
     void HandleClient(int clientFd);
 
-    static std::vector<std::string> SplitCommandReversed(const std::string& command);
     [[nodiscard]] std::string ExecuteCommand(const std::string& command);
 
 private:
-    std::shared_ptr<spdlog::logger> logger =
+    std::shared_ptr<spdlog::logger> m_logger =
         spdlog::get("CommandsListener") ? spdlog::get("CommandsListener") : spdlog::stdout_color_mt("CommandsListener");
 
     CLI::App m_app;
