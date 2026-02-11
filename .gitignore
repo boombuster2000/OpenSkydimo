@@ -1,6 +1,3 @@
-bin/
-obj/
-/packages/
-riderModule.iml
-/_ReSharper.Caches/
+build/
 .idea/
+.cmake_cache/
