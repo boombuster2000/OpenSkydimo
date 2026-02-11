@@ -4,18 +4,16 @@
 
 #include "SkydimoDriver.h"
 
-using json = nlohmann::json;
-
-inline void to_json(json& j, const SkydimoDriver& driver)
+inline void to_json(nlohmann::json& j, const SkydimoDriver& driver)
 {
     j["serial-port"] = driver.m_portName;
     j["led-count"] = driver.m_ledCount;
     j["baud-rate"] = driver.m_baudRate;
 }
 
-inline void from_json(const json& j, SkydimoDriver& driver)
+inline void from_json(const nlohmann::json& j, SkydimoDriver& driver)
 {
-    driver.m_portName = j["serial-port"].get<std::string>();
-    driver.m_ledCount = j["led-count"].get<int>();
-    driver.m_baudRate = j["baud-rate"].get<int>();
+    driver.SetSerialPort(j.value("serial-port", ""));
+    driver.SetLedCount(j.value("led-count", 0));
+    driver.SetBaudRate(j.value("baud-rate", 115200));
 }
