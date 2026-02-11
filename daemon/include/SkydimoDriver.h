@@ -36,7 +36,6 @@ private:
     // Thread synchronization - mutable to allow locking in const methods
     mutable std::mutex m_mutex;
 
-    bool m_isInitialized = false;
     bool m_isReadyToSend = false;
 
     static constexpr int m_headerSize = 6;
