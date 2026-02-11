@@ -40,7 +40,7 @@ void CommandsListener::Start()
 
     if (m_serverFd < 0)
     {
-        logger->error("Error creating socket: {}", strerror(errno));
+        m_logger->error("Error creating socket: {}", strerror(errno));
         return;
     }
 
@@ -53,20 +53,20 @@ void CommandsListener::Start()
 
     if (bind(m_serverFd, reinterpret_cast<sockaddr*>(&address), sizeof(address)) < 0)
     {
-        logger->error("Error binding socket: {}", strerror(errno));
+        m_logger->error("Error binding socket: {}", strerror(errno));
         close(m_serverFd);
         return;
     }
 
     if (listen(m_serverFd, 5) < 0)
     {
-        logger->error("Error listening on socket: {}", strerror(errno));
+        m_logger->error("Error listening on socket: {}", strerror(errno));
         close(m_serverFd);
         unlink(m_socketPath.c_str());
         return;
     }
 
-    logger->info("Socket listening on {}", m_socketPath);
+    m_logger->info("Socket listening on {}", m_socketPath);
     m_isServerRunning = true;
     m_listenerThread = std::thread(&CommandsListener::ListenLoop, this);
 }
@@ -112,7 +112,7 @@ void CommandsListener::ListenLoop()
             if (errno == EINTR)
                 continue;
 
-            logger->error("Error accepting client connection: {}", strerror(errno));
+            m_logger->error("Error accepting client connection: {}", strerror(errno));
             break;
         }
 
@@ -134,13 +134,14 @@ void CommandsListener::HandleClient(const int clientFd)
 
         const auto response = ExecuteCommand(command);
 
-        write(clientFd, response.c_str(), response.size());
+        if (write(clientFd, response.c_str(), response.size()) < 0)
+            m_logger->warn("Failed to write response to client: {}", strerror(errno));
     }
 }
 
 std::string CommandsListener::ExecuteCommand(const std::string& command)
 {
-    logger->info("Executing command {}", command);
+    m_logger->info("Executing command {}", command);
 
     try
     {
@@ -150,12 +151,12 @@ std::string CommandsListener::ExecuteCommand(const std::string& command)
     }
     catch (const CLI::ParseError& e)
     {
-        logger->error("Error executing command: {}", e.what());
+        m_logger->error("Error executing command: {}", e.what());
         return "ERROR: " + std::string(e.what()) + "\n";
     }
     catch (const std::exception& e)
     {
-        logger->error("Error executing command: {}", e.what());
+        m_logger->error("Error executing command: {}", e.what());
         return "ERROR: " + std::string(e.what()) + "\n";
     }
 }
