@@ -11,7 +11,6 @@
 #include "spdlog/fmt/bundled/format.h"
 
 #include "openskydimo/commands.hpp"
-#include "openskydimo/types.h"
 
 bool SendCommand(const std::string& command)
 {
@@ -57,7 +56,6 @@ bool SendCommand(const std::string& command)
         return false;
     }
 
-    // Send command with robust blocking write loop
     const std::string msg = command + "\n";
     size_t totalWritten = 0;
     const size_t msgLen = msg.length();
@@ -81,18 +79,41 @@ bool SendCommand(const std::string& command)
         totalWritten += static_cast<size_t>(bytesWritten);
     }
 
-    // Wait for response
+    // Read response with loop to handle chunked data
+    std::string response;
     char buffer[128];
+    bool receivedData = false;
 
-    if (const ssize_t bytesRead = read(static_cast<int>(sockFd), buffer, sizeof(buffer) - 1); bytesRead > 0)
+    while (true)
     {
+        const ssize_t bytesRead = read(static_cast<int>(sockFd), buffer, sizeof(buffer) - 1);
+
+        if (bytesRead < 0)
+        {
+            std::cerr << "Read error: " << strerror(errno) << std::endl;
+            return false;
+        }
+
+        if (bytesRead == 0)
+            break; // EOF - server closed connection
+
+        receivedData = true;
         buffer[bytesRead] = '\0';
-        std::cout << "[SERVER] - " << buffer;
+        response.append(buffer, static_cast<size_t>(bytesRead));
+
+        // If response contains newline, assume message is complete
+        if (response.find('\n') != std::string::npos)
+            break;
     }
-    else if (bytesRead < 0)
+
+    if (receivedData)
     {
-        std::cerr << "Read error: " << strerror(errno) << std::endl;
-        return false;
+        std::cout << "[SERVER] - " << response;
+        // Ensure output ends with newline if server didn't provide one
+        if (!response.empty() && response.back() != '\n')
+        {
+            std::cout << std::endl;
+        }
     }
 
     return true;
