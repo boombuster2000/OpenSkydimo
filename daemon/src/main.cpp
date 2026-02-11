@@ -3,6 +3,9 @@
 #include <csignal>
 #include <thread>
 
+#include "spdlog/sinks/stdout_color_sinks.h"
+#include "spdlog/spdlog.h"
+
 #include "openskydimo/config.h"
 
 #include "CommandsListener.h"
