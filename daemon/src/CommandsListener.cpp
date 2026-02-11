@@ -138,42 +138,13 @@ void CommandsListener::HandleClient(const int clientFd)
     }
 }
 
-std::vector<std::string> CommandsListener::SplitCommandReversed(const std::string& command)
-{
-    std::vector<std::string> parts;
-
-    std::string part;
-    for (int i = 0; i < command.length(); i++)
-    {
-        if (command[i] == ' ')
-        {
-            parts.insert(parts.begin(), part);
-            part.clear();
-            continue;
-        }
-
-        if (i == command.length() - 1)
-        {
-            part += command[i];
-            parts.insert(parts.begin(), part);
-            continue;
-        }
-
-        part += command[i];
-    }
-
-    return parts;
-}
-
 std::string CommandsListener::ExecuteCommand(const std::string& command)
 {
     logger->info("Executing command {}", command);
 
     try
     {
-
-        std::vector<std::string> args = SplitCommandReversed(command);
-        m_app.parse(args);
+        m_app.parse(command, false);
 
         return "OK\n";
     }
