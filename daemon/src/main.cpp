@@ -3,6 +3,8 @@
 #include <csignal>
 #include <thread>
 
+#include "openskydimo/config.h"
+
 #include "CommandsListener.h"
 #include "SkydimoDriver.h"
 
@@ -23,7 +25,7 @@ int main()
         spdlog::get("Daemon") ? spdlog::get("Daemon") : spdlog::stdout_color_mt("Daemon");
 
     SkydimoDriver driver;
-    CommandsListener listener("/tmp/openskydimo.sock", driver);
+    CommandsListener listener(s_socketPath, driver);
 
     struct sigaction signalAction{};
     signalAction.sa_handler = SignalHandler;

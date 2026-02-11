@@ -11,11 +11,10 @@
 #include "spdlog/fmt/bundled/format.h"
 
 #include "openskydimo/commands.hpp"
+#include "openskydimo/config.h"
 
 bool SendCommand(const std::string& command)
 {
-    const std::string socketPath = "/tmp/openskydimo.sock";
-
     // RAII wrapper for socket file descriptor
     struct SocketGuard
     {
@@ -48,7 +47,7 @@ bool SendCommand(const std::string& command)
 
     sockaddr_un addr{};
     addr.sun_family = AF_UNIX;
-    strncpy(addr.sun_path, socketPath.c_str(), sizeof(addr.sun_path) - 1);
+    strncpy(addr.sun_path, s_socketPath.c_str(), sizeof(addr.sun_path) - 1);
 
     if (connect(static_cast<int>(sockFd), reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) < 0)
     {

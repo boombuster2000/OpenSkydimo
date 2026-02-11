@@ -1,6 +1,7 @@
 add_library(openskydimo-common INTERFACE
         include/openskydimo/types.h
         include/openskydimo/commands.hpp
+        include/openskydimo/config.h
 )
 
 FetchContent_Declare(
