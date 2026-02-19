@@ -13,8 +13,13 @@ inline void to_json(nlohmann::json& j, const SkydimoDriver& driver)
 
 inline void from_json(const nlohmann::json& j, SkydimoDriver& driver)
 {
-    driver.SetSerialPort(j.value("serial-port", ""));
-    driver.SetLedCount(j.value("led-count", 0));
-    driver.SetBaudRate(j.value("baud-rate", 115200));
-    driver.OpenSerialConnection();
+    driver.SetSerialPort(j.at("serial-port"));
+    driver.SetLedCount(j.at("led-count"));
+    driver.SetBaudRate(j.at("baud-rate"));
+
+    driver.logger->info("Loaded skydimo driver from config (port={}, baud={}, leds={})", driver.GetSerialPortName(),
+                        driver.GetBaudRate(), driver.GetLedCount());
+
+    if (!driver.OpenSerialConnection())
+        driver.logger->error("Failed to start serial connection with loaded config");
 }

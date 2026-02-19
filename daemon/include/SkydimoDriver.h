@@ -41,6 +41,7 @@ private:
     void AddHeaderToBuffer();
 
     friend void to_json(nlohmann::json& j, const SkydimoDriver& driver);
+    friend void from_json(const nlohmann::json& j, SkydimoDriver& driver);
 
 private:
     std::shared_ptr<spdlog::logger> logger =
