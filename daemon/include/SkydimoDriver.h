@@ -1,12 +1,11 @@
 #pragma once
+#include "LoggerFactory.h"
 #include "openskydimo/types.h"
 
 #include <mutex>
 #include <string>
 #include <vector>
 
-#include "spdlog/sinks/stdout_color_sinks.h"
-#include "spdlog/spdlog.h"
 #include <nlohmann/json.hpp>
 
 class SkydimoDriver
@@ -44,8 +43,7 @@ private:
     friend void from_json(const nlohmann::json& j, SkydimoDriver& driver);
 
 private:
-    std::shared_ptr<spdlog::logger> logger =
-        spdlog::get("SkydimoDriver") ? spdlog::get("SkydimoDriver") : spdlog::stdout_color_mt("SkydimoDriver");
+    std::shared_ptr<spdlog::logger> logger = LoggerFactory::Create("SkydimoDriver");
 
     // Thread synchronization - mutable to allow locking in const methods
     mutable std::mutex m_mutex;

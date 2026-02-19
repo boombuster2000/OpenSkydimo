@@ -2,11 +2,8 @@
 
 #include <atomic>
 #include <thread>
-#include <vector>
 
-#include "spdlog/sinks/stdout_color_sinks.h"
-#include "spdlog/spdlog.h"
-
+#include "LoggerFactory.h"
 #include "SkydimoDriver.h"
 #include "openskydimo/commands.hpp"
 
@@ -28,8 +25,7 @@ private:
     [[nodiscard]] std::string ExecuteCommand(const std::string& command);
 
 private:
-    std::shared_ptr<spdlog::logger> m_logger =
-        spdlog::get("CommandsListener") ? spdlog::get("CommandsListener") : spdlog::stdout_color_mt("CommandsListener");
+    std::shared_ptr<spdlog::logger> m_logger = LoggerFactory::Create("CommandsListener");
 
     CLI::App m_app;
 

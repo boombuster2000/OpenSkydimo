@@ -6,20 +6,18 @@
 #include <stdexcept>
 #include <thread>
 
-#include "spdlog/sinks/stdout_color_sinks.h"
-#include "spdlog/spdlog.h"
 #include <nlohmann/json.hpp>
 
 #include "openskydimo/config.h"
 
 #include "CommandsListener.h"
+#include "LoggerFactory.h"
 #include "SkydimoDriver.h"
 #include "json_SkydimoDriver.hpp"
 
 static std::atomic s_shutdown_requested{false};
 
-static const std::shared_ptr<spdlog::logger> s_logger =
-    spdlog::get("Daemon") ? spdlog::get("Daemon") : spdlog::stdout_color_mt("Daemon");
+static std::shared_ptr<spdlog::logger> s_logger;
 
 void SignalHandler(const int signal)
 {
@@ -78,7 +76,11 @@ void SaveDriver(const SkydimoDriver& driver, const std::filesystem::path& config
 
 int main()
 {
+    LoggerFactory::Init("/var/log/openskydimo/app.log");
+    s_logger = LoggerFactory::Create("Daemon");
+
     const auto configFilePath = GetConfigFilePath();
+
     SkydimoDriver driver = LoadDriver(configFilePath);
     CommandsListener listener(s_socketPath, driver);
 

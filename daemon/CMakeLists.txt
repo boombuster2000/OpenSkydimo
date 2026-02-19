@@ -12,6 +12,7 @@ add_executable(openskydimo-daemon
         src/CommandsListener.cpp
         include/CommandsListener.h
         include/json_SkydimoDriver.hpp
+        include/LoggerFactory.h
 )
 
 target_include_directories(openskydimo-daemon PRIVATE include)

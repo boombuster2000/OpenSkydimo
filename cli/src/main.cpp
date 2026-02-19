@@ -1,6 +1,6 @@
-#include <cstring>
-
 #include <cerrno>
+#include <cstring>
+#include <deque>
 #include <functional>
 #include <iostream>
 #include <sys/socket.h>
@@ -133,6 +133,36 @@ std::string JoinArgs(const int argc, char* argv[])
     return cmd;
 }
 
+CLI::App* AddLogsCmd(CLI::App* app, int& tailLines)
+{
+    const auto logsCmd = app->add_subcommand("logs", "Print the daemon logs");
+
+    logsCmd->add_option("-n,--lines", tailLines, "Number of lines to show (default: 50)");
+
+    logsCmd->callback([&] {
+        std::ifstream logFile("/var/log/openskydimo/app.log");
+        if (!logFile)
+        {
+            std::cerr << "Could not open log file" << std::endl;
+            return;
+        }
+
+        std::deque<std::string> lines;
+        std::string line;
+        while (std::getline(logFile, line))
+        {
+            lines.push_back(line);
+            if (static_cast<int>(lines.size()) > tailLines)
+                lines.pop_front();
+        }
+
+        for (const auto& l : lines)
+            std::cout << l << "\n";
+    });
+
+    return logsCmd;
+}
+
 int main(const int argc, char* argv[])
 {
     using namespace openskydimo::commands;
@@ -156,6 +186,9 @@ int main(const int argc, char* argv[])
 
     AddStartCmd(&app, [&] { SendCommand(cmd); });
     AddStopCmd(&app, [&] { SendCommand(cmd); });
+
+    int tailLines = 50;
+    AddLogsCmd(&app, tailLines);
 
     CLI11_PARSE(app, argc, argv);
     return 0;
