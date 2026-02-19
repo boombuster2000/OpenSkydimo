@@ -8,13 +8,13 @@
 
 #include "spdlog/sinks/stdout_color_sinks.h"
 #include "spdlog/spdlog.h"
+#include <nlohmann/json.hpp>
 
 #include "openskydimo/config.h"
 
 #include "CommandsListener.h"
 #include "SkydimoDriver.h"
 #include "json_SkydimoDriver.hpp"
-#include <nlohmann/json.hpp>
 
 static std::atomic s_shutdown_requested{false};
 
@@ -109,7 +109,6 @@ int main()
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
-    // Trigger graceful shutdown if signal was received
     if (s_shutdown_requested.load(std::memory_order_acquire))
     {
         listener.Stop();
