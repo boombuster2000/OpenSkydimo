@@ -16,4 +16,5 @@ inline void from_json(const nlohmann::json& j, SkydimoDriver& driver)
     driver.SetSerialPort(j.value("serial-port", ""));
     driver.SetLedCount(j.value("led-count", 0));
     driver.SetBaudRate(j.value("baud-rate", 115200));
+    driver.OpenSerialConnection();
 }
