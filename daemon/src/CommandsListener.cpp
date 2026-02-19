@@ -8,6 +8,7 @@
 #include <utility>
 
 #include "CLI/CLI.hpp"
+#include <spdlog/fmt/fmt.h>
 
 #include "openskydimo/commands.hpp"
 
@@ -18,6 +19,8 @@ CommandsListener::CommandsListener(std::string socketPath, SkydimoDriver& driver
 
     AddFillCmd(&m_app, [this] { m_driver.Fill(m_cmdArgs.fillColor); }, m_cmdArgs.fillColor);
 
+    AddStatusCmd(&m_app, [this] { m_response = fmt::format("Connected: {}", m_driver.IsReadyToSend()); });
+
     const auto setCmd = AddSetCmd(&m_app);
     AddSetPortCmd(setCmd, [this] { m_driver.SetSerialPort(m_cmdArgs.serialPort); }, m_cmdArgs.serialPort);
     AddSetCountCmd(setCmd, [this] { m_driver.SetLedCount(m_cmdArgs.ledCount); }, m_cmdArgs.ledCount);
@@ -26,7 +29,11 @@ CommandsListener::CommandsListener(std::string socketPath, SkydimoDriver& driver
     AddGetPortCmd(getCmd, [this] { m_response = m_driver.GetSerialPortName() + "\n"; });
     AddGetCountCmd(getCmd, [this] { m_response = std::to_string(m_driver.GetLedCount()) + "\n"; });
 
-    AddStartCmd(&m_app, [this] { m_driver.OpenSerialConnection(); });
+    AddStartCmd(&m_app, [this] {
+        if (!m_driver.OpenSerialConnection())
+            m_response = "Failed to open serial connection, check daemon logs";
+    });
+
     AddStopCmd(&m_app, [this] { m_driver.CloseSerialConnection(); });
 }
 

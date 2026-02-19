@@ -77,6 +77,13 @@ inline CLI::App* AddStopCmd(CLI::App* app, const std::function<void()>& callback
     return stopCmd;
 }
 
+inline CLI::App* AddStatusCmd(CLI::App* app, const std::function<void()>& callback)
+{
+    auto* statusCmd = app->add_subcommand("status", "Status the LED driver control loop");
+    statusCmd->callback(callback);
+    return statusCmd;
+}
+
 inline CLI::App* AddFillCmd(CLI::App* app, const std::function<void()>& callback, ColorRGB& color)
 {
     const auto fillCmd = app->add_subcommand("fill", "Fill all LEDs with a solid color");

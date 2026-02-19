@@ -143,6 +143,7 @@ int main(const int argc, char* argv[])
 
     Args cmdArgs;
 
+    AddStatusCmd(&app, [&] { SendCommand(cmd); });
     AddFillCmd(&app, [&] { SendCommand(cmd); }, cmdArgs.fillColor);
 
     const auto setCmd = AddSetCmd(&app);
