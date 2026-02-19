@@ -21,8 +21,13 @@ public:
     SkydimoDriver(const SkydimoDriver&) = delete;
     SkydimoDriver& operator=(const SkydimoDriver&) = delete;
 
+    std::string GetSerialPortName() const;
     void SetSerialPort(const std::string& portName);
+
+    int GetBaudRate() const;
     void SetBaudRate(int baudRate);
+
+    int GetLedCount() const;
     void SetLedCount(int ledCount);
 
     bool OpenSerialConnection();

@@ -149,6 +149,10 @@ int main(const int argc, char* argv[])
     AddSetPortCmd(setCmd, [&] { SendCommand(cmd); }, cmdArgs.serialPort);
     AddSetCountCmd(setCmd, [&] { SendCommand(cmd); }, cmdArgs.ledCount);
 
+    const auto getCmd = AddGetCmd(&app);
+    AddGetPortCmd(getCmd, [&] { SendCommand(cmd); });
+    AddGetCountCmd(getCmd, [&] { SendCommand(cmd); });
+
     AddStartCmd(&app, [&] { SendCommand(cmd); });
     AddStopCmd(&app, [&] { SendCommand(cmd); });
 

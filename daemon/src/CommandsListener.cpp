@@ -22,6 +22,10 @@ CommandsListener::CommandsListener(std::string socketPath, SkydimoDriver& driver
     AddSetPortCmd(setCmd, [this] { m_driver.SetSerialPort(m_cmdArgs.serialPort); }, m_cmdArgs.serialPort);
     AddSetCountCmd(setCmd, [this] { m_driver.SetLedCount(m_cmdArgs.ledCount); }, m_cmdArgs.ledCount);
 
+    const auto getCmd = AddGetCmd(&m_app);
+    AddGetPortCmd(getCmd, [this] { m_response = m_driver.GetSerialPortName() + "\n"; });
+    AddGetCountCmd(getCmd, [this] { m_response = std::to_string(m_driver.GetLedCount()) + "\n"; });
+
     AddStartCmd(&m_app, [this] { m_driver.OpenSerialConnection(); });
     AddStopCmd(&m_app, [this] { m_driver.CloseSerialConnection(); });
 }
@@ -133,6 +137,7 @@ void CommandsListener::HandleClient(const int clientFd)
             command.pop_back();
 
         const auto response = ExecuteCommand(command);
+        m_response = std::string();
 
         if (write(clientFd, response.c_str(), response.size()) < 0)
             m_logger->warn("Failed to write response to client: {}", strerror(errno));
@@ -147,7 +152,7 @@ std::string CommandsListener::ExecuteCommand(const std::string& command)
     {
         m_app.parse(command, false);
 
-        return "OK\n";
+        return m_response.empty() ? "OK\n" : m_response;
     }
     catch (const CLI::ParseError& e)
     {

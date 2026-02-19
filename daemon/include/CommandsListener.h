@@ -41,4 +41,5 @@ private:
     std::thread m_listenerThread;
 
     openskydimo::commands::Args m_cmdArgs;
+    std::string m_response;
 };

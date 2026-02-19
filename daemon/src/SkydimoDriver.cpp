@@ -22,16 +22,31 @@ SkydimoDriver::SkydimoDriver(SkydimoDriver&& other) noexcept
 {
 }
 
+std::string SkydimoDriver::GetSerialPortName() const
+{
+    return m_portName;
+}
+
 void SkydimoDriver::SetSerialPort(const std::string& portName)
 {
     std::lock_guard lock(m_mutex);
     m_portName = portName;
 }
 
+int SkydimoDriver::GetBaudRate() const
+{
+    return m_baudRate;
+}
+
 void SkydimoDriver::SetBaudRate(const int baudRate)
 {
     std::lock_guard lock(m_mutex);
     m_baudRate = baudRate;
+}
+
+int SkydimoDriver::GetLedCount() const
+{
+    return m_ledCount;
 }
 
 void SkydimoDriver::SetLedCount(const int ledCount)

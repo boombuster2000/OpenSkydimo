@@ -22,6 +22,11 @@ inline CLI::App* AddSetCmd(CLI::App* app)
     return app->add_subcommand("set", "Configure LED driver settings")->require_subcommand(1);
 }
 
+inline CLI::App* AddGetCmd(CLI::App* app)
+{
+    return app->add_subcommand("get", "Get LED driver settings")->require_subcommand(1);
+}
+
 inline CLI::App* AddSetPortCmd(CLI::App* setCmd, const std::function<void()>& callback, std::string& serialPort)
 {
     auto* portCmd = setCmd->add_subcommand("port", "Configure the serial port for LED communication");
@@ -31,10 +36,26 @@ inline CLI::App* AddSetPortCmd(CLI::App* setCmd, const std::function<void()>& ca
     return portCmd;
 }
 
+inline CLI::App* AddGetPortCmd(CLI::App* getCmd, const std::function<void()>& callback)
+{
+    auto* portCmd = getCmd->add_subcommand("port", "Get the set serial port for LED communication");
+    portCmd->callback(callback);
+
+    return portCmd;
+}
+
 inline CLI::App* AddSetCountCmd(CLI::App* setCmd, const std::function<void()>& callback, uint8_t& ledCount)
 {
     auto* countCmd = setCmd->add_subcommand("count", "Configure the total number of LEDs in the strip");
     countCmd->add_option("count", ledCount, "Number of LEDs (1-255)")->required()->check(CLI::Range(1, 255));
+    countCmd->callback(callback);
+
+    return countCmd;
+}
+
+inline CLI::App* AddGetCountCmd(CLI::App* getCmd, const std::function<void()>& callback)
+{
+    auto* countCmd = getCmd->add_subcommand("count", "Get total number of LEDs in the strip set");
     countCmd->callback(callback);
 
     return countCmd;
