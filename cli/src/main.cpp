@@ -163,6 +163,27 @@ CLI::App* AddLogsCmd(CLI::App* app, int& tailLines)
     return logsCmd;
 }
 
+CLI::App* AddConfigCmd(CLI::App* app)
+{
+    const auto configCmd = app->add_subcommand("config", "Print the contents of the config file");
+
+    configCmd->callback([] {
+        const std::filesystem::path configFilePath = GetConfigFilePath();
+
+        const std::ifstream configFile(configFilePath);
+        if (!configFile)
+        {
+            std::cerr << "Could not open config file at: " << configFilePath << std::endl;
+            return;
+        }
+
+        std::cout << configFile.rdbuf();
+        std::cout << std::endl;
+    });
+
+    return configCmd;
+}
+
 int main(const int argc, char* argv[])
 {
     using namespace openskydimo::commands;
@@ -189,6 +210,7 @@ int main(const int argc, char* argv[])
 
     int tailLines = 50;
     AddLogsCmd(&app, tailLines);
+    AddConfigCmd(&app);
 
     CLI11_PARSE(app, argc, argv);
     return 0;
