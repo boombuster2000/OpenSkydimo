@@ -165,7 +165,9 @@ CLI::App* AddLogsCmd(CLI::App* app, int& tailLines)
 
 CLI::App* AddConfigCmd(CLI::App* app)
 {
-    const auto configCmd = app->add_subcommand("config", "Print the contents of the config file");
+    const auto configCmd =
+        app->add_subcommand("config", "Print the config file contents. Note: this reflects the last saved state - "
+                                      "changes are only written when the daemon stops");
 
     configCmd->callback([] {
         const std::filesystem::path configFilePath = GetConfigFilePath();

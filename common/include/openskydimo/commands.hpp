@@ -24,7 +24,7 @@ inline CLI::App* AddSetCmd(CLI::App* app)
 
 inline CLI::App* AddGetCmd(CLI::App* app)
 {
-    return app->add_subcommand("get", "Get LED driver settings")->require_subcommand(1);
+    return app->add_subcommand("get", "Get current LED driver settings")->require_subcommand(1);
 }
 
 inline CLI::App* AddSetPortCmd(CLI::App* setCmd, const std::function<void()>& callback, std::string& serialPort)
@@ -38,7 +38,7 @@ inline CLI::App* AddSetPortCmd(CLI::App* setCmd, const std::function<void()>& ca
 
 inline CLI::App* AddGetPortCmd(CLI::App* getCmd, const std::function<void()>& callback)
 {
-    auto* portCmd = getCmd->add_subcommand("port", "Get the set serial port for LED communication");
+    auto* portCmd = getCmd->add_subcommand("port", "Get the serial port currently in use by the daemon");
     portCmd->callback(callback);
 
     return portCmd;
@@ -55,7 +55,7 @@ inline CLI::App* AddSetCountCmd(CLI::App* setCmd, const std::function<void()>& c
 
 inline CLI::App* AddGetCountCmd(CLI::App* getCmd, const std::function<void()>& callback)
 {
-    auto* countCmd = getCmd->add_subcommand("count", "Get total number of LEDs in the strip set");
+    auto* countCmd = getCmd->add_subcommand("count", "Get the LED count currently configured in the daemon");
     countCmd->callback(callback);
 
     return countCmd;
@@ -79,7 +79,7 @@ inline CLI::App* AddStopCmd(CLI::App* app, const std::function<void()>& callback
 
 inline CLI::App* AddStatusCmd(CLI::App* app, const std::function<void()>& callback)
 {
-    auto* statusCmd = app->add_subcommand("status", "Status the LED driver control loop");
+    auto* statusCmd = app->add_subcommand("status", "Get the current status of the LED driver control loop");
     statusCmd->callback(callback);
     return statusCmd;
 }
