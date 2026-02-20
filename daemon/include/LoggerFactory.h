@@ -17,6 +17,9 @@ public:
         if (!m_sink)
             throw std::runtime_error("LoggerFactory::Init() must be called before Create()");
 
+        if (auto existing = spdlog::get(name))
+            return existing;
+
         auto logger = std::make_shared<spdlog::logger>(name, m_sink);
         spdlog::register_logger(logger);
         return logger;
