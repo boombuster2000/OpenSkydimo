@@ -10,6 +10,12 @@
 
 class SkydimoDriver
 {
+public:
+    enum class Mode
+    {
+        FILL,
+        UNKNOWN
+    };
 
 public:
     SkydimoDriver() = default;
@@ -36,6 +42,25 @@ public:
     void SendColors() const;
     void Fill(ColorRGB color);
 
+    static std::string ModeToString(const Mode mode)
+    {
+        switch (mode)
+        {
+        case Mode::FILL:
+            return "fill";
+        default:
+            return "unknown";
+        }
+    }
+
+    static Mode StringToMode(const std::string& mode)
+    {
+        if (mode == "fill")
+            return Mode::FILL;
+
+        return Mode::UNKNOWN;
+    }
+
 private:
     void AddHeaderToBuffer();
 
@@ -57,5 +82,18 @@ private:
     int m_ledCount = 0;
     int m_baudRate = 115200;
 
+    Mode m_mode = Mode::FILL;
+    ColorRGB m_color;
+
     std::vector<std::byte> m_buffer;
+};
+
+template <>
+struct fmt::formatter<SkydimoDriver::Mode> : formatter<std::string>
+{
+    auto format(const SkydimoDriver::Mode& my, format_context& ctx) const -> decltype(ctx.out())
+    {
+        const std::string result = SkydimoDriver::ModeToString(my);
+        return formatter<std::string>::format(result, ctx);
+    }
 };

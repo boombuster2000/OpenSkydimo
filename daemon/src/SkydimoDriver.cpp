@@ -211,6 +211,9 @@ void SkydimoDriver::Fill(const ColorRGB color)
     std::lock_guard lock(m_mutex);
     logger->debug("Filling {} LEDs with RGB{}", m_ledCount, color);
 
+    m_mode = Mode::FILL;
+    m_color = color;
+
     if (m_buffer.size() < (m_headerSize + m_ledCount * 3))
     {
         logger->error("Insufficient buffer size");
