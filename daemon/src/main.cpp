@@ -28,22 +28,6 @@ void SignalHandler(const int signal)
         s_shutdown_requested.store(true, std::memory_order_release);
 }
 
-std::filesystem::path GetConfigFilePath()
-{
-    namespace fs = std::filesystem;
-
-    const char* homeDir = std::getenv("HOME");
-    if (!homeDir)
-        throw std::runtime_error("HOME environment variable not set");
-
-    const fs::path configDir = fs::path(homeDir) / ".config" / "openskydimo";
-
-    if (!fs::exists(configDir))
-        fs::create_directories(configDir);
-
-    return configDir / "config.json";
-}
-
 SkydimoDriver LoadDriver(const std::filesystem::path& configFilePath)
 {
     using json = nlohmann::json;
