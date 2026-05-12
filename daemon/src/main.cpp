@@ -56,8 +56,7 @@ int main()
 
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
-
-    // Trigger graceful shutdown if signal was received
+    
     if (shutdown_requested.load(std::memory_order_acquire))
     {
         listener.Stop();
