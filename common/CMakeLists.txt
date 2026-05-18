@@ -1,9 +1,14 @@
 add_library(openskydimo-common INTERFACE
-        include/openskydimo/types.h
         include/openskydimo/commands.hpp
         include/openskydimo/config.h
+
         include/ipc/UnixSocketServer.h
         src/ipc/UnixSocketServer.cpp
+        include/ipc/UnixSocketClient.h
+        src/ipc/UnixSocketClient.cpp
+
+        include/openskydimo/types/Response.h
+        include/openskydimo/types/ColorRGB.h
 )
 
 FetchContent_Declare(
