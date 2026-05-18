@@ -1,5 +1,5 @@
 #pragma once
-#include "openskydimo/types.h"
+#include "openskydimo/types/ColorRGB.h"
 
 #include <mutex>
 #include <string>
