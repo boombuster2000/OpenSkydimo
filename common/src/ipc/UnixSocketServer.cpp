@@ -1,7 +1,9 @@
 #include "ipc/UnixSocketServer.h"
 
 #include <algorithm>
+#include <arpa/inet.h>
 #include <cerrno>
+#include <cstdint>
 #include <cstring>
 #include <stdexcept>
 #include <sys/socket.h>
@@ -91,12 +93,27 @@ void UnixSocketServer::HandleClient(const int clientFd)
 
 ssize_t UnixSocketServer::SendResponse(const int clientFd, const std::string& response)
 {
-    const ssize_t bytesSent = send(clientFd, response.c_str(), response.size(), 0);
-
-    if (bytesSent == -1)
+    // Send length prefix first
+    uint32_t length = htonl(response.size());
+    if (send(clientFd, &length, sizeof(length), 0) == -1)
+    {
         OnFailedToSend(clientFd, response);
+        return -1;
+    }
 
-    return bytesSent;
+    size_t totalSent = 0;
+    while (totalSent < response.size())
+    {
+        const ssize_t bytesSent = send(clientFd, response.c_str() + totalSent, response.size() - totalSent, 0);
+        if (bytesSent == -1)
+        {
+            OnFailedToSend(clientFd, response);
+            return -1;
+        }
+        totalSent += bytesSent;
+    }
+
+    return totalSent;
 }
 
 void UnixSocketServer::Stop()
