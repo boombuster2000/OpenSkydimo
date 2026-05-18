@@ -5,7 +5,7 @@
 #include <string>
 
 #include "CLI/App.hpp"
-#include "openskydimo/types.h"
+#include "types/ColorRGB.h"
 
 namespace openskydimo::commands
 {
