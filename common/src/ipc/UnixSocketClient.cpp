@@ -1,5 +1,7 @@
 #include "ipc/UnixSocketClient.h"
 
+#include <arpa/inet.h>
+#include <cstdint>
 #include <cstring>
 #include <stdexcept>
 #include <sys/socket.h>
@@ -9,7 +11,7 @@
 #include <utility>
 #include <vector>
 
-UnixSocketClient::UnixSocketClient(std::string socketPath, int bufferSize)
+UnixSocketClient::UnixSocketClient(std::string socketPath, const int bufferSize)
     : m_socket(-1), m_socketPath(std::move(socketPath)), m_bufferSize(bufferSize)
 {
     m_socket = socket(AF_UNIX, SOCK_STREAM, 0);
@@ -61,14 +63,26 @@ void UnixSocketClient::SendMessage(const std::string& message) const
     }
 }
 
-size_t UnixSocketClient::ReceiveMessage(std::string& message) const
+std::string UnixSocketClient::ReceiveMessage() const
 {
-    std::vector<char> buffer(m_bufferSize);
-    const ssize_t bytesRead = read(m_socket, buffer.data(), m_bufferSize);
+    uint32_t length;
+    if (recv(m_socket, &length, sizeof(length), MSG_WAITALL) == -1)
+        throw std::runtime_error(std::string("Failed to receive length: ") + strerror(errno));
+    length = ntohl(length);
 
-    if (bytesRead == -1)
-        throw std::runtime_error(std::string("Failed to receive: ") + strerror(errno));
+    std::string message(length, '\0');
+    size_t totalRead = 0;
+    while (totalRead < length)
+    {
+        const ssize_t bytesRead = read(m_socket, message.data() + totalRead, length - totalRead);
 
-    message.assign(buffer.data(), bytesRead);
-    return bytesRead;
+        if (bytesRead == -1)
+            throw std::runtime_error(std::string("Failed to receive: ") + strerror(errno));
+        if (bytesRead == 0)
+            throw std::runtime_error("Connection closed before message was complete");
+
+        totalRead += bytesRead;
+    }
+
+    return message;
 }

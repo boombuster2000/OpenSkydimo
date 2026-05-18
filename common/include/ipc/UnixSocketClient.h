@@ -11,7 +11,7 @@ public:
     void Connect();
     void Disconnect();
     void SendMessage(const std::string& message) const;
-    size_t ReceiveMessage(std::string& message) const;
+    [[nodiscard]] std::string ReceiveMessage() const;
 
 private:
     int m_socket;
