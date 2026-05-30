@@ -1,4 +1,4 @@
-#include "../include/OpenSkydimoClient.h"
+#include "OpenSkydimoClient.h"
 
 #include <utility>
 
