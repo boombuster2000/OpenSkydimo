@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdint>
 #include <string>
 #include <sys/un.h>
 #include <vector>
@@ -12,7 +13,7 @@ public:
     void Start();
     void Stop();
 
-    virtual void OnMessageReceived(int clientFd, ssize_t bytesReceived, const std::string& message) = 0;
+    virtual void OnMessageReceived(int clientFd, const std::string& message) = 0;
 
     virtual void OnClientConnected(int clientFd) = 0;
     virtual void OnClientDisconnected(int clientFd) = 0;
