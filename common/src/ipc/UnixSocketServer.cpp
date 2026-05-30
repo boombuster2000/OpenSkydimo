@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <arpa/inet.h>
 #include <cerrno>
-#include <cstdint>
 #include <cstring>
 #include <stdexcept>
 #include <sys/socket.h>
@@ -66,13 +65,18 @@ void UnixSocketServer::CloseClientConnection(const int clientFd)
 
 void UnixSocketServer::HandleClient(const int clientFd)
 {
-    std::vector<char> buffer(m_bufferSize, 0);
     while (true)
     {
-        std::ranges::fill(buffer, 0);
-        const ssize_t bytesReceived = recv(clientFd, buffer.data(), m_bufferSize - 1, 0);
+        uint32_t messageLength;
+        const ssize_t messageLengthBytesRead = recv(clientFd, &messageLength, sizeof(messageLength), MSG_WAITALL);
 
-        if (bytesReceived == -1)
+        if (messageLengthBytesRead == 0)
+        {
+            CloseClientConnection(clientFd);
+            return;
+        }
+
+        if (messageLengthBytesRead == -1)
         {
             if (errno == EINTR)
                 continue;
@@ -81,20 +85,41 @@ void UnixSocketServer::HandleClient(const int clientFd)
             return;
         }
 
-        if (bytesReceived == 0)
+        messageLength = ntohl(messageLength);
+
+        std::string message(messageLength, '\0');
+        size_t totalRead = 0;
+
+        while (totalRead < messageLength)
         {
-            CloseClientConnection(clientFd);
-            return;
+            const ssize_t bytesRead = recv(clientFd, message.data() + totalRead, messageLength - totalRead, 0);
+
+            if (bytesRead == 0)
+            {
+                CloseClientConnection(clientFd);
+                return;
+            }
+
+            if (bytesRead == -1)
+            {
+                if (errno == EINTR)
+                    continue;
+                OnFailedToReceive(clientFd);
+                CloseClientConnection(clientFd);
+                return;
+            }
+
+            totalRead += bytesRead;
         }
 
-        OnMessageReceived(clientFd, bytesReceived, std::string(buffer.data(), bytesReceived));
+        OnMessageReceived(clientFd, message);
     }
 }
 
 ssize_t UnixSocketServer::SendResponse(const int clientFd, const std::string& response)
 {
     // Send length prefix first
-    uint32_t length = htonl(response.size());
+    const uint32_t length = htonl(response.size());
     if (send(clientFd, &length, sizeof(length), 0) == -1)
     {
         OnFailedToSend(clientFd, response);
@@ -113,7 +138,7 @@ ssize_t UnixSocketServer::SendResponse(const int clientFd, const std::string& re
         totalSent += bytesSent;
     }
 
-    return totalSent;
+    return static_cast<ssize_t>(totalSent);
 }
 
 void UnixSocketServer::Stop()

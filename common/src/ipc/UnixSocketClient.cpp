@@ -49,16 +49,17 @@ void UnixSocketClient::Disconnect()
 
 void UnixSocketClient::SendMessage(const std::string& message) const
 {
-    size_t totalBytesWritten = 0;
+    const uint32_t length = htonl(message.size());
+    if (send(m_socket, &length, sizeof(length), 0) == -1)
+        throw std::runtime_error(std::string("Failed to send length: ") + strerror(errno));
 
+    size_t totalBytesWritten = 0;
     while (totalBytesWritten < message.size())
     {
         const ssize_t bytesWritten =
             write(m_socket, message.c_str() + totalBytesWritten, message.size() - totalBytesWritten);
-
         if (bytesWritten == -1)
             throw std::runtime_error(std::string("Failed to send: ") + strerror(errno));
-
         totalBytesWritten += bytesWritten;
     }
 }
