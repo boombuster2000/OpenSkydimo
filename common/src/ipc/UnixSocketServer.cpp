@@ -11,6 +11,8 @@
 #include <utility>
 #include <vector>
 
+std::atomic<bool> UnixSocketServer::s_shutdownRequested{false};
+
 UnixSocketServer::UnixSocketServer(std::string socketPath, const int backlogSize, const int bufferSize)
     : m_socketPath(std::move(socketPath)), m_serverFd(-1), m_backlog(backlogSize), m_bufferSize(bufferSize)
 {
@@ -30,8 +32,8 @@ UnixSocketServer::~UnixSocketServer()
 
 void UnixSocketServer::Start()
 {
-
     unlink(m_socketPath.c_str());
+
     if (bind(m_serverFd, reinterpret_cast<sockaddr*>(&m_address), sizeof(m_address)) == -1)
         throw std::runtime_error("Failed to bind socket");
 
@@ -40,9 +42,20 @@ void UnixSocketServer::Start()
 
     while (m_serverFd != -1)
     {
-        int clientFd = accept(m_serverFd, nullptr, nullptr);
+        const int clientFd = accept(m_serverFd, nullptr, nullptr);
         if (clientFd == -1)
         {
+            if (errno == EINTR)
+            {
+                if (s_shutdownRequested.load(std::memory_order_acquire))
+                {
+                    Stop();
+                    return;
+                }
+
+                continue;
+            }
+
             OnFailedClientConnection();
             continue;
         }
@@ -63,54 +76,57 @@ void UnixSocketServer::CloseClientConnection(const int clientFd)
     OnClientDisconnected(clientFd);
 }
 
+UnixSocketServer::RecvStatus UnixSocketServer::RecvAll(const int clientFd, void* buf, const size_t len)
+{
+    size_t totalRead = 0;
+    auto* bytes = static_cast<uint8_t*>(buf);
+    while (totalRead < len)
+    {
+        const ssize_t n = recv(clientFd, bytes + totalRead, len - totalRead, 0);
+        if (n == 0)
+            return RecvStatus::Disconnected;
+        if (n == -1)
+        {
+            if (errno == EINTR)
+            {
+                if (s_shutdownRequested.load(std::memory_order_acquire))
+                    return RecvStatus::Shutdown;
+                continue;
+            }
+            return RecvStatus::Error;
+        }
+        totalRead += n;
+    }
+    return RecvStatus::Ok;
+}
+
 void UnixSocketServer::HandleClient(const int clientFd)
 {
+    auto isStatusOK = [&](const RecvStatus status) -> bool {
+        if (status == RecvStatus::Ok)
+            return true;
+
+        if (status == RecvStatus::Error)
+            OnFailedToReceive(clientFd);
+
+        if (status == RecvStatus::Shutdown)
+            Stop();
+
+        CloseClientConnection(clientFd);
+        return false;
+    };
+
     while (true)
     {
         uint32_t messageLength;
-        const ssize_t messageLengthBytesRead = recv(clientFd, &messageLength, sizeof(messageLength), MSG_WAITALL);
-
-        if (messageLengthBytesRead == 0)
-        {
-            CloseClientConnection(clientFd);
+        if (!isStatusOK(RecvAll(clientFd, &messageLength, sizeof(messageLength))))
             return;
-        }
-
-        if (messageLengthBytesRead == -1)
-        {
-            if (errno == EINTR)
-                continue;
-            OnFailedToReceive(clientFd);
-            CloseClientConnection(clientFd);
-            return;
-        }
 
         messageLength = ntohl(messageLength);
-
         std::string message(messageLength, '\0');
-        size_t totalRead = 0;
 
-        while (totalRead < messageLength)
-        {
-            const ssize_t bytesRead = recv(clientFd, message.data() + totalRead, messageLength - totalRead, 0);
-
-            if (bytesRead == 0)
-            {
-                CloseClientConnection(clientFd);
-                return;
-            }
-
-            if (bytesRead == -1)
-            {
-                if (errno == EINTR)
-                    continue;
-                OnFailedToReceive(clientFd);
-                CloseClientConnection(clientFd);
-                return;
-            }
-
-            totalRead += bytesRead;
-        }
+        if (!isStatusOK(RecvAll(clientFd, message.data(), messageLength)))
+            return;
 
         OnMessageReceived(clientFd, message);
     }
@@ -118,7 +134,6 @@ void UnixSocketServer::HandleClient(const int clientFd)
 
 ssize_t UnixSocketServer::SendResponse(const int clientFd, const std::string& response)
 {
-    // Send length prefix first
     const uint32_t length = htonl(response.size());
     if (send(clientFd, &length, sizeof(length), 0) == -1)
     {
@@ -153,4 +168,33 @@ void UnixSocketServer::Stop()
     for (const int clientFd : m_clientFds)
         close(clientFd);
     m_clientFds.clear();
+}
+
+void UnixSocketServer::RequestStop()
+{
+    s_shutdownRequested.store(true, std::memory_order_release);
+}
+
+void UnixSocketServer::OnMessageReceived(const int clientFd, const std::string& message)
+{
+}
+
+void UnixSocketServer::OnClientConnected(const int clientFd)
+{
+}
+
+void UnixSocketServer::OnClientDisconnected(const int clientFd)
+{
+}
+
+void UnixSocketServer::OnFailedToReceive(const int clientFd)
+{
+}
+
+void UnixSocketServer::OnFailedToSend(const int clientFd, const std::string& messageSent)
+{
+}
+
+void UnixSocketServer::OnFailedClientConnection()
+{
 }
