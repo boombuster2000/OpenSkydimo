@@ -1,4 +1,4 @@
-add_library(openskydimo-common INTERFACE
+add_library(openskydimo-common STATIC
         include/openskydimo/commands.hpp
         include/openskydimo/config.h
 
@@ -25,5 +25,5 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(CLI11)
 
-target_include_directories(openskydimo-common INTERFACE include)
-target_link_libraries(openskydimo-common INTERFACE spdlog::spdlog CLI11)
+target_include_directories(openskydimo-common PUBLIC include)
+target_link_libraries(openskydimo-common PUBLIC spdlog::spdlog CLI11)
