@@ -1,7 +1,7 @@
 #pragma once
 #include "openskydimo/types/Response.h"
 
-#include <ipc/UnixSocketClient.h>
+#include "ipc/UnixSocketClient.h"
 
 class OpenSkydimoClient : public UnixSocketClient
 {
