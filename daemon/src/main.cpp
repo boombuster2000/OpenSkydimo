@@ -1,66 +1,40 @@
-#include <atomic>
-#include <chrono>
-#include <csignal>
-#include <thread>
-
+#include "OpenSkydimoServer.h"
+#include "openskydimo/config.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
 #include "spdlog/spdlog.h"
+#include <csignal>
 
-#include "openskydimo/config.h"
-
-#include "CommandsListener.h"
-#include "SkydimoDriver.h"
-
-static std::atomic shutdown_requested{false};
+static OpenSkydimoServer* g_server = nullptr;
 
 void SignalHandler(const int signal)
 {
-    if (signal == SIGINT)
-        shutdown_requested.store(true, std::memory_order_release);
-
-    if (signal == SIGTERM)
-        shutdown_requested.store(true, std::memory_order_release);
+    if (signal == SIGINT || signal == SIGTERM)
+        if (g_server)
+            OpenSkydimoServer::RequestStop();
 }
 
 int main()
 {
-    const std::shared_ptr<spdlog::logger> logger =
-        spdlog::get("Daemon") ? spdlog::get("Daemon") : spdlog::stdout_color_mt("Daemon");
+    const std::shared_ptr<spdlog::logger> logger = spdlog::stdout_color_mt("Daemon");
 
-    SkydimoDriver driver;
-    CommandsListener listener(s_socketPath, driver);
+    OpenSkydimoServer server(s_socketPath, 1, 128);
+    g_server = &server;
 
     struct sigaction signalAction{};
     signalAction.sa_handler = SignalHandler;
     sigemptyset(&signalAction.sa_mask);
-    signalAction.sa_flags = SA_RESTART;
 
     if (sigaction(SIGINT, &signalAction, nullptr) == -1)
     {
         logger->error("sigaction SIGINT");
         return 1;
     }
-
     if (sigaction(SIGTERM, &signalAction, nullptr) == -1)
     {
         logger->error("sigaction SIGTERM");
         return 1;
     }
 
-    listener.Start();
-
-    while (!listener.ShouldStop() && !shutdown_requested.load(std::memory_order_acquire))
-    {
-        if (driver.IsReadyToSend())
-            driver.SendColors();
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    }
-    
-    if (shutdown_requested.load(std::memory_order_acquire))
-    {
-        listener.Stop();
-    }
-
+    server.Start();
     return 0;
 }
