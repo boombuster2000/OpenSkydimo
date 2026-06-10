@@ -20,8 +20,6 @@ public:
     void OpenSerialConnection();
     void CloseSerialConnection();
 
-    [[nodiscard]] bool IsReadyToSend() const;
-
     void SendColors() const;
 
     void Fill(ColorRGB color);
@@ -31,8 +29,6 @@ private:
 
 private:
     std::shared_ptr<spdlog::logger> logger = spdlog::stdout_color_mt("SkydimoDriver");
-    mutable std::mutex m_mutex;
-    bool m_isReadyToSend = false;
     static constexpr int m_headerSize = 6;
     int m_serialPort = -1;
     std::string m_portName;
