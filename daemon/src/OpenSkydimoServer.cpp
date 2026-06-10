@@ -31,37 +31,42 @@ void OpenSkydimoServer::OnMessageReceived(const int clientFd, const std::string&
         std::vector<std::string> args = json["argv"];
         std::ranges::reverse(args);
         m_app.parse(args);
+        response.code = 0;
+        response.message = "Ok";
+
+        if (const ssize_t result = SendResponse(clientFd, nlohmann::json(response).dump()); result < 0)
+            m_logger->error("Failed to send response.");
     }
     catch (const CLI::ParseError& e)
     {
         response.code = 1;
-        response.message = "ERROR: " + std::string(e.what()) + "\n";
+        response.message = std::string(e.what()) + "\n";
         m_logger->error(response.message);
 
-        if (const ssize_t result = SendResponse(clientFd, response.message); result < 0)
-            m_logger->error("ERROR: Failed to send response.");
+        if (const ssize_t result = SendResponse(clientFd, nlohmann::json(response).dump()); result < 0)
+            m_logger->error("Failed to send response.");
     }
     catch (const std::exception& e)
     {
         response.code = 1;
-        response.message = "ERROR: " + std::string(e.what()) + "\n";
+        response.message = std::string(e.what()) + "\n";
         m_logger->error(response.message);
 
-        if (const ssize_t result = SendResponse(clientFd, response.message); result < 0)
-            m_logger->error("ERROR: Failed to send response.");
+        if (const ssize_t result = SendResponse(clientFd, nlohmann::json(response).dump()); result < 0)
+            m_logger->error("Failed to send response.");
     }
 }
 void OpenSkydimoServer::OnClientConnected(const int clientFd)
 {
-    m_logger->info("INFO: Client connected: " + std::to_string(clientFd));
+    m_logger->info("Client connected: " + std::to_string(clientFd));
 }
 void OpenSkydimoServer::OnClientDisconnected(const int clientFd)
 {
-    m_logger->info("INFO: Client disconnected: " + std::to_string(clientFd));
+    m_logger->info("Client disconnected: " + std::to_string(clientFd));
 }
 void OpenSkydimoServer::OnFailedToReceive(const int clientFd)
 {
-    m_logger->error("ERROR: Failed to receive response of client " + std::to_string(clientFd));
+    m_logger->error("Failed to receive response of client " + std::to_string(clientFd));
 }
 void OpenSkydimoServer::OnFailedToSend(const int clientFd, const std::string& messageSent)
 {
