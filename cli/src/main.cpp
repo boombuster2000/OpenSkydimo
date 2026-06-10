@@ -12,7 +12,7 @@ void SendCommand(OpenSkydimoClient& client, const int argc, char* argv[])
     client.Connect();
     client.SendCommand(argc, argv);
     auto [code, message] = client.GetResponse();
-    std::cout << message << std::endl;
+    std::cout << "SERVER - " << message << std::endl;
     client.Disconnect();
 }
 
