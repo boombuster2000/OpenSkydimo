@@ -18,18 +18,21 @@ SkydimoDriver::~SkydimoDriver()
 void SkydimoDriver::SetSerialPort(const std::string& portName)
 {
     std::lock_guard lock(m_mutex);
+    logger->info("Setting serial port to '{}'", portName);
     m_portName = portName;
 }
 
 void SkydimoDriver::SetBaudRate(const int baudRate)
 {
     std::lock_guard lock(m_mutex);
+    logger->info("Setting baud rate to {}", baudRate);
     m_baudRate = baudRate;
 }
 
 void SkydimoDriver::SetLedCount(const int ledCount)
 {
     std::lock_guard lock(m_mutex);
+    logger->info("Setting LED count to {}", ledCount);
     m_ledCount = ledCount;
     AddHeaderToBuffer();
 }
@@ -38,7 +41,7 @@ void SkydimoDriver::OpenSerialConnection()
 {
     std::lock_guard lock(m_mutex);
 
-    logger->info("Opening serial port {}", m_portName);
+    logger->info("Opening serial connection on port '{}'", m_portName);
 
     if (m_portName.empty())
         throw SerialConnectionException(
@@ -49,7 +52,9 @@ void SkydimoDriver::OpenSerialConnection()
 
     m_serialPort = open(m_portName.c_str(), O_RDWR | O_NOCTTY);
     if (m_serialPort < 0)
-        throw SerialConnectionException(std::format("Unable to open serial port {}", m_portName));
+        throw SerialConnectionException(std::format("Unable to open serial port '{}'", m_portName));
+
+    logger->debug("Serial port '{}' opened, configuring tty attributes", m_portName);
 
     termios tty{};
     if (tcgetattr(m_serialPort, &tty) != 0)
@@ -75,8 +80,6 @@ void SkydimoDriver::OpenSerialConnection()
     tty.c_oflag &= ~OPOST;
     tty.c_oflag &= ~ONLCR;
     tty.c_lflag &= ~(ICANON | ECHO | ECHOE | ECHONL | ISIG);
-    // tty.c_cc[VTIME] = 10;
-    // tty.c_cc[VMIN] = 0;
 
     speed_t baudRate;
     switch (m_baudRate)
@@ -107,6 +110,7 @@ void SkydimoDriver::OpenSerialConnection()
 
     cfsetispeed(&tty, baudRate);
     cfsetospeed(&tty, baudRate);
+    logger->debug("Baud rate set to {}", m_baudRate);
 
     if (tcsetattr(m_serialPort, TCSANOW, &tty) != 0)
     {
@@ -116,26 +120,25 @@ void SkydimoDriver::OpenSerialConnection()
     }
 
     m_isReadyToSend = true;
+    logger->info("Serial connection established on '{}' at {} baud, ready to send to {} LEDs", m_portName, m_baudRate,
+                 m_ledCount);
 }
 
 void SkydimoDriver::CloseSerialConnection()
 {
     std::lock_guard lock(m_mutex);
 
-    logger->info("Closing serial port {}", m_portName);
-    if (m_serialPort >= 0)
+    if (m_serialPort < 0)
     {
-        close(m_serialPort);
-        m_serialPort = -1;
+        logger->warn("CloseSerialConnection called but no connection is open");
+        return;
     }
 
+    logger->info("Closing serial connection on '{}'", m_portName);
+    close(m_serialPort);
+    m_serialPort = -1;
     m_isReadyToSend = false;
-}
-
-bool SkydimoDriver::IsReadyToSend() const
-{
-    std::lock_guard lock(m_mutex);
-    return m_isReadyToSend;
+    logger->info("Serial connection closed");
 }
 
 void SkydimoDriver::SendColors() const
@@ -144,25 +147,23 @@ void SkydimoDriver::SendColors() const
 
     if (!m_isReadyToSend)
     {
-        logger->debug("Not ready to send colors");
+        logger->warn("SendColors called but serial connection is not open — run 'start' first");
         return;
     }
+
+    logger->debug("Sending {} bytes to '{}'", m_buffer.size(), m_portName);
 
     const ssize_t bytesWritten = write(m_serialPort, m_buffer.data(), m_buffer.size());
 
     if (bytesWritten < 0)
-    {
         throw SerialWriteException(
-            std::format("Failed to write to serial port {}: {} (errno: {})", m_portName, strerror(errno), errno));
-    }
+            std::format("Failed to write to serial port '{}': {} (errno: {})", m_portName, strerror(errno), errno));
 
     if (static_cast<size_t>(bytesWritten) != m_buffer.size())
-    {
         throw SerialWriteException(
-            std::format("Incomplete write to {}: {}/{} bytes", m_portName, bytesWritten, m_buffer.size()));
-    }
+            std::format("Incomplete write to '{}': {}/{} bytes", m_portName, bytesWritten, m_buffer.size()));
 
-    logger->debug("Sent {} bytes to {}", bytesWritten, m_portName);
+    logger->debug("Sent {} bytes successfully", bytesWritten);
 }
 
 void SkydimoDriver::Fill(const ColorRGB color)
@@ -172,7 +173,7 @@ void SkydimoDriver::Fill(const ColorRGB color)
     if (m_ledCount == 0)
         throw SkydimoException("LED count has not been set. Run 'set count <n>' before using fill.");
 
-    logger->debug("Filling {} LEDs with RGB{}", m_ledCount, color);
+    logger->info("Filling {} LEDs with RGB({}, {}, {})", m_ledCount, color.r, color.g, color.b);
 
     int offset = m_headerSize;
     for (int i = 0; i < m_ledCount; i++)
@@ -181,13 +182,17 @@ void SkydimoDriver::Fill(const ColorRGB color)
         m_buffer[offset++] = color.g;
         m_buffer[offset++] = color.b;
     }
+
+    logger->debug("Buffer filled, {} bytes ready to send", m_buffer.size());
 }
 
 void SkydimoDriver::AddHeaderToBuffer()
 {
     const size_t bufferSize = m_headerSize + (m_ledCount * 3);
-    m_buffer.resize(bufferSize);
+    logger->debug("Resizing buffer to {} bytes ({} header + {} LEDs x 3 channels)", bufferSize, m_headerSize,
+                  m_ledCount);
 
+    m_buffer.resize(bufferSize);
     m_buffer[0] = static_cast<std::byte>('A');
     m_buffer[1] = static_cast<std::byte>('d');
     m_buffer[2] = static_cast<std::byte>('a');
