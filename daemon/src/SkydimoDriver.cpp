@@ -14,6 +14,15 @@ SkydimoDriver::~SkydimoDriver()
     }
 }
 
+void SkydimoDriver::SetRefreshRate(const int hz)
+{
+    if (hz <= 0)
+        throw SkydimoException("Refresh rate must be > 0 Hz");
+
+    logger->info("Setting refresh rate to {} Hz", hz);
+    m_sendInterval = std::chrono::microseconds(1'000'000 / hz);
+}
+
 void SkydimoDriver::SetSerialPort(const std::string& portName)
 {
     logger->info("Setting serial port to '{}'", portName);
@@ -62,7 +71,7 @@ void SkydimoDriver::OpenSerialConnection()
     tty.c_cflag &= ~PARENB; // No parity
     tty.c_cflag &= ~CSTOPB; // 1 stop bit
 
-    tty.c_cflag &= ~CSIZE; // First clear the databits set
+    tty.c_cflag &= ~CSIZE; // First clear the data-bits set
     tty.c_cflag |= CS8;    // 8 data bits (DataBits = 8)
 
     tty.c_cflag &= ~CRTSCTS;       // No hardware flow control (Handshake.None)
@@ -115,6 +124,10 @@ void SkydimoDriver::OpenSerialConnection()
 
     logger->info("Serial connection established on '{}' at {} baud, ready to send to {} LEDs", m_portName, m_baudRate,
                  m_ledCount);
+
+    m_running = true;
+    m_sendThread = std::thread(&SkydimoDriver::SendLoop, this);
+    logger->info("Send thread started at ~{} Hz", 1'000'000 / m_sendInterval.count());
 }
 
 void SkydimoDriver::CloseSerialConnection()
@@ -125,10 +138,41 @@ void SkydimoDriver::CloseSerialConnection()
         return;
     }
 
+    // Signal and join the thread before closing the port
+    logger->info("Stopping send thread");
+    m_running = false;
+    if (m_sendThread.joinable())
+        m_sendThread.join();
+    logger->info("Send thread stopped");
+
     logger->info("Closing serial connection on '{}'", m_portName);
     close(m_serialPort);
     m_serialPort = -1;
     logger->info("Serial connection closed");
+}
+
+void SkydimoDriver::SendLoop()
+{
+    using clock = std::chrono::steady_clock;
+
+    while (m_running)
+    {
+        const auto next = clock::now() + m_sendInterval;
+
+        try
+        {
+            std::lock_guard lock(m_bufferMutex);
+            SendColors();
+        }
+        catch (const SerialWriteException& e)
+        {
+            logger->error("Send loop write error: {}", e.what());
+            m_running = false; // Stop rather than spam errors
+            break;
+        }
+
+        std::this_thread::sleep_until(next);
+    }
 }
 
 void SkydimoDriver::SendColors() const
@@ -155,18 +199,19 @@ void SkydimoDriver::Fill(const ColorRGB color)
 
     logger->info("Filling {} LEDs with RGB({}, {}, {})", m_ledCount, color.r, color.g, color.b);
 
-    int offset = m_headerSize;
-    for (int i = 0; i < m_ledCount; i++)
     {
-        m_buffer[offset++] = color.r;
-        m_buffer[offset++] = color.g;
-        m_buffer[offset++] = color.b;
+        std::lock_guard lock(m_bufferMutex);
+        int offset = m_headerSize;
+        for (int i = 0; i < m_ledCount; i++)
+        {
+            m_buffer[offset++] = color.r;
+            m_buffer[offset++] = color.g;
+            m_buffer[offset++] = color.b;
+        }
     }
 
-    logger->debug("Buffer filled, {} bytes ready to send", m_buffer.size());
-    SendColors();
+    logger->debug("Buffer updated with new fill colour");
 }
-
 void SkydimoDriver::AddHeaderToBuffer()
 {
     const size_t bufferSize = m_headerSize + (m_ledCount * 3);
