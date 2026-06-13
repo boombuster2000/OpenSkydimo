@@ -44,14 +44,20 @@ void SkydimoDriver::SetLedCount(const int ledCount)
 
 void SkydimoDriver::OpenSerialConnection()
 {
+    if (m_running)
+    {
+        logger->warn("Tried to open serial connection but already running.");
+        return;
+    }
+
     logger->info("Opening serial connection on port '{}'", m_portName);
 
     if (m_portName.empty())
-        throw SerialConnectionException(
-            "No serial port specified. Run 'set port <path>' before starting (e.g. set port /dev/ttyUSB0).");
+        throw SerialConnectionException("No serial port set. Run 'openskydimo set port <path>' before starting "
+                                        "(e.g. set port /dev/ttyUSB0).");
 
     if (m_ledCount == 0)
-        throw SerialConnectionException("LED count has not been set. Run 'set count <n>' before starting.");
+        throw SerialConnectionException("LED count has not been set. Run 'openskydimo set count <n>' before starting.");
 
     m_serialPort = open(m_portName.c_str(), O_RDWR | O_NOCTTY);
     if (m_serialPort < 0)
@@ -194,8 +200,8 @@ void SkydimoDriver::SendColors() const
 
 void SkydimoDriver::Fill(const ColorRGB color)
 {
-    if (m_ledCount == 0)
-        throw SkydimoException("LED count has not been set. Run 'set count <n>' before using fill.");
+    if (!m_running)
+        throw SkydimoException("Driver has not been started. Run 'openskydimo start' to start it.");
 
     logger->info("Filling {} LEDs with RGB({}, {}, {})", m_ledCount, color.r, color.g, color.b);
 
