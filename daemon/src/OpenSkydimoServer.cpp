@@ -32,7 +32,7 @@ void OpenSkydimoServer::OnMessageReceived(const int clientFd, const std::string&
         std::ranges::reverse(args);
         m_app.parse(args);
         response.code = 0;
-        response.message = "Ok";
+        response.message = "OK";
 
         if (const ssize_t result = SendResponse(clientFd, nlohmann::json(response).dump()); result < 0)
             m_logger->error("Failed to send response.");
