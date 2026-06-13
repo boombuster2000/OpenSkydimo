@@ -10,11 +10,11 @@
 #include <thread>
 #include <vector>
 
-class SkydimoDriver
+class Driver
 {
 public:
-    SkydimoDriver() = default;
-    ~SkydimoDriver();
+    Driver() = default;
+    ~Driver();
 
     void SetSerialPort(const std::string& portName);
     void SetBaudRate(int baudRate);
@@ -32,7 +32,7 @@ private:
     void AddHeaderToBuffer();
 
 private:
-    std::shared_ptr<spdlog::logger> logger = spdlog::stdout_color_mt("SkydimoDriver");
+    std::shared_ptr<spdlog::logger> logger = spdlog::stdout_color_mt("Driver");
 
     static constexpr int m_headerSize = 6;
 

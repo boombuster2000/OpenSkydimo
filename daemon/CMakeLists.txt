@@ -1,11 +1,9 @@
 add_executable(openskydimo-daemon
         src/main.cpp
-        src/SkydimoDriver.cpp
-        include/SkydimoDriver.h
-        src/CommandsListener.cpp
-        include/CommandsListener.h
-        include/OpenSkydimoServer.h
-        src/OpenSkydimoServer.cpp
+        include/Driver.h
+        src/Driver.cpp
+        include/Server.h
+        src/Server.cpp
 )
 
 target_include_directories(openskydimo-daemon PRIVATE include)

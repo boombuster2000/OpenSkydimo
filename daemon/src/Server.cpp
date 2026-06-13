@@ -1,4 +1,4 @@
-#include "OpenSkydimoServer.h"
+#include "Server.h"
 
 #include <algorithm>
 #include <utility>
@@ -8,7 +8,7 @@
 #include "openskydimo/commands.hpp"
 #include "openskydimo/types/Response.h"
 
-OpenSkydimoServer::OpenSkydimoServer(std::string socketPath, const int backlogSize, const int bufferSize)
+Server::Server(std::string socketPath, const int backlogSize, const int bufferSize)
     : UnixSocketServer(std::move(socketPath), backlogSize, bufferSize)
 {
     using namespace openskydimo::commands;
@@ -22,7 +22,7 @@ OpenSkydimoServer::OpenSkydimoServer(std::string socketPath, const int backlogSi
     AddStopCmd(&m_app, [this] { m_driver.CloseSerialConnection(); });
 }
 
-void OpenSkydimoServer::OnMessageReceived(const int clientFd, const std::string& message)
+void Server::OnMessageReceived(const int clientFd, const std::string& message)
 {
     Response response;
     try
@@ -56,23 +56,23 @@ void OpenSkydimoServer::OnMessageReceived(const int clientFd, const std::string&
             m_logger->error("Failed to send response.");
     }
 }
-void OpenSkydimoServer::OnClientConnected(const int clientFd)
+void Server::OnClientConnected(const int clientFd)
 {
     m_logger->info("Client connected: " + std::to_string(clientFd));
 }
-void OpenSkydimoServer::OnClientDisconnected(const int clientFd)
+void Server::OnClientDisconnected(const int clientFd)
 {
     m_logger->info("Client disconnected: " + std::to_string(clientFd));
 }
-void OpenSkydimoServer::OnFailedToReceive(const int clientFd)
+void Server::OnFailedToReceive(const int clientFd)
 {
     m_logger->error("Failed to receive response of client " + std::to_string(clientFd));
 }
-void OpenSkydimoServer::OnFailedToSend(const int clientFd, const std::string& messageSent)
+void Server::OnFailedToSend(const int clientFd, const std::string& messageSent)
 {
     m_logger->error("ERROR: Failed to send response to client " + std::to_string(clientFd));
 }
-void OpenSkydimoServer::OnFailedClientConnection()
+void Server::OnFailedClientConnection()
 {
     m_logger->error("ERROR: Failed client connection");
 }

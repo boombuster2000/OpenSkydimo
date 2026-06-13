@@ -1,11 +1,11 @@
-#include "SkydimoDriver.h"
+#include "Driver.h"
 
 #include <fcntl.h>
 #include <format>
 #include <termios.h>
 #include <unistd.h>
 
-SkydimoDriver::~SkydimoDriver()
+Driver::~Driver()
 {
     if (m_serialPort >= 0)
     {
@@ -14,7 +14,7 @@ SkydimoDriver::~SkydimoDriver()
     }
 }
 
-void SkydimoDriver::SetRefreshRate(const int hz)
+void Driver::SetRefreshRate(const int hz)
 {
     if (hz <= 0)
         throw SkydimoException("Refresh rate must be > 0 Hz");
@@ -23,26 +23,26 @@ void SkydimoDriver::SetRefreshRate(const int hz)
     m_sendInterval = std::chrono::microseconds(1'000'000 / hz);
 }
 
-void SkydimoDriver::SetSerialPort(const std::string& portName)
+void Driver::SetSerialPort(const std::string& portName)
 {
     logger->info("Setting serial port to '{}'", portName);
     m_portName = portName;
 }
 
-void SkydimoDriver::SetBaudRate(const int baudRate)
+void Driver::SetBaudRate(const int baudRate)
 {
     logger->info("Setting baud rate to {}", baudRate);
     m_baudRate = baudRate;
 }
 
-void SkydimoDriver::SetLedCount(const int ledCount)
+void Driver::SetLedCount(const int ledCount)
 {
     logger->info("Setting LED count to {}", ledCount);
     m_ledCount = ledCount;
     AddHeaderToBuffer();
 }
 
-void SkydimoDriver::OpenSerialConnection()
+void Driver::OpenSerialConnection()
 {
     if (m_running)
     {
@@ -132,11 +132,11 @@ void SkydimoDriver::OpenSerialConnection()
                  m_ledCount);
 
     m_running = true;
-    m_sendThread = std::thread(&SkydimoDriver::SendLoop, this);
+    m_sendThread = std::thread(&Driver::SendLoop, this);
     logger->info("Send thread started at ~{} Hz", 1'000'000 / m_sendInterval.count());
 }
 
-void SkydimoDriver::CloseSerialConnection()
+void Driver::CloseSerialConnection()
 {
     if (m_serialPort < 0)
     {
@@ -157,7 +157,7 @@ void SkydimoDriver::CloseSerialConnection()
     logger->info("Serial connection closed");
 }
 
-void SkydimoDriver::SendLoop()
+void Driver::SendLoop()
 {
     using clock = std::chrono::steady_clock;
 
@@ -181,7 +181,7 @@ void SkydimoDriver::SendLoop()
     }
 }
 
-void SkydimoDriver::SendColors() const
+void Driver::SendColors() const
 {
     logger->debug("Sending {} bytes to '{}'", m_buffer.size(), m_portName);
 
@@ -198,7 +198,7 @@ void SkydimoDriver::SendColors() const
     logger->debug("Sent {} bytes successfully", bytesWritten);
 }
 
-void SkydimoDriver::Fill(const ColorRGB color)
+void Driver::Fill(const ColorRGB color)
 {
     if (!m_running)
         throw SkydimoException("Driver has not been started. Run 'openskydimo start' to start it.");
@@ -218,7 +218,7 @@ void SkydimoDriver::Fill(const ColorRGB color)
 
     logger->debug("Buffer updated with new fill colour");
 }
-void SkydimoDriver::AddHeaderToBuffer()
+void Driver::AddHeaderToBuffer()
 {
     const size_t bufferSize = m_headerSize + (m_ledCount * 3);
     logger->debug("Resizing buffer to {} bytes ({} header + {} LEDs x 3 channels)", bufferSize, m_headerSize,

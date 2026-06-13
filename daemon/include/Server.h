@@ -1,17 +1,17 @@
 #pragma once
 #include "ipc/UnixSocketServer.h"
 
-#include "CLI/App.hpp"
+#include "CLI/CLI.hpp"
 #include "spdlog/sinks/stdout_color_sinks.h"
 #include "spdlog/spdlog.h"
 
-#include "SkydimoDriver.h"
+#include "Driver.h"
 #include "openskydimo/commands.hpp"
 
-class OpenSkydimoServer : public UnixSocketServer
+class Server : public UnixSocketServer
 {
 public:
-    OpenSkydimoServer(std::string socketPath, int backlogSize, int bufferSize);
+    Server(std::string socketPath, int backlogSize, int bufferSize);
 
     void OnMessageReceived(int clientFd, const std::string& message) final;
 
@@ -23,8 +23,8 @@ public:
     void OnFailedClientConnection() final;
 
 private:
-    std::shared_ptr<spdlog::logger> m_logger = spdlog::stdout_color_mt("SkydimoServer");
+    std::shared_ptr<spdlog::logger> m_logger = spdlog::stdout_color_mt("Server");
     CLI::App m_app;
-    SkydimoDriver m_driver;
+    Driver m_driver;
     openskydimo::commands::Args m_cmdArgs;
 };
