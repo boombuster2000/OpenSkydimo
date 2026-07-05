@@ -38,6 +38,7 @@ public:
                 using T = std::decay_t<T0>;
 
                 if constexpr (std::is_same_v<T, int>)
+                {
                     try
                     {
                         newValue = std::stoi(value);
@@ -46,7 +47,9 @@ public:
                     {
                         throw std::invalid_argument("Invalid value for option, expected int.");
                     }
+                }
                 else if constexpr (std::is_same_v<T, float>)
+                {
                     try
                     {
                         newValue = std::stof(value);
@@ -55,6 +58,7 @@ public:
                     {
                         throw std::invalid_argument("Invalid value for option, expected float.");
                     }
+                }
                 else if constexpr (std::is_same_v<T, bool>)
                 {
                     if (value == "true" || value == "1")
@@ -65,7 +69,9 @@ public:
                         throw std::invalid_argument("Invalid value for option, expected bool.");
                 }
                 else if constexpr (std::is_same_v<T, std::string>)
+                {
                     newValue = value;
+                }
             },
             m_value);
 
