@@ -81,7 +81,7 @@ public:
             return m_callback();
         }
 
-        return "idk";
+        return "idk"; // May need to throw error.
     }
 
 private:
