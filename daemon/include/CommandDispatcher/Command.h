@@ -7,12 +7,14 @@
 #include <variant>
 #include <vector>
 
+#include "openskydimo/types/Response.h"
+
 #include "CommandDispatcher/Option.h"
 
 class Command
 {
 public:
-    using Callback = std::function<std::string()>;
+    using Callback = std::function<Response()>;
 
     Command(std::string name, std::string description) : m_name(std::move(name)), m_description(std::move(description))
     {
@@ -65,7 +67,7 @@ public:
         m_callback = callback;
     }
 
-    std::string Execute(const std::vector<std::string>& args)
+    Response Execute(const std::vector<std::string>& args)
     {
         if (!args.empty())
         {
@@ -81,7 +83,7 @@ public:
             return m_callback();
         }
 
-        return "idk"; // May need to throw error.
+        return {.code = 1, .message = "error."};
     }
 
 private:
