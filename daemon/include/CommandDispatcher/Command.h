@@ -7,7 +7,7 @@
 #include <variant>
 #include <vector>
 
-#include "Option.h"
+#include "CommandDispatcher/Option.h"
 
 class Command
 {
@@ -35,7 +35,7 @@ public:
     }
 
     template <typename T>
-    T GetOption(std::string name) const
+    T GetOption(const std::string& name) const
     {
         auto it = std::find_if(m_options.begin(), m_options.end(),
                                [&](const Option& option) { return option.GetName() == name; });
@@ -46,7 +46,7 @@ public:
         return std::get<T>(it->GetValue());
     }
 
-    Command& AddCommand(std::string name, std::string description)
+    Command& AddCommand(const std::string& name, const std::string& description)
     {
         if (!m_options.empty())
             throw std::logic_error("Cannot add a subcommand: this Command already has normal options.");
@@ -57,21 +57,20 @@ public:
         return it->second;
     }
 
-    void SetCallback(Callback callback)
+    void SetCallback(const Callback& callback)
     {
         if (isCommandGroup)
             throw std::logic_error("Cannot set a callback: this Command is a command group.");
 
-        m_callback = [this, callback = std::move(callback)]() { return callback(); };
+        m_callback = callback;
     }
 
     std::string Execute(const std::vector<std::string>& args)
     {
         if (!args.empty())
         {
-            auto it = m_subcommands.find(args[0]);
-            if (it != m_subcommands.end())
-                return it->second.Execute(std::vector<std::string>(args.begin() + 1, args.end()));
+            if (const auto it = m_subcommands.find(args[0]); it != m_subcommands.end())
+                return it->second.Execute(std::vector(args.begin() + 1, args.end()));
         }
 
         if (m_callback)

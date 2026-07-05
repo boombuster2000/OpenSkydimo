@@ -1,17 +1,18 @@
 #pragma once
 
-#include "Command.h"
-#include <complex>
 #include <string>
 #include <unordered_map>
 #include <vector>
+
+#include "CommandDispatcher/Command.h"
+
 class Dispatcher
 {
 public:
     Dispatcher() = default;
     ~Dispatcher() = default;
 
-    Command& AddCommand(std::string name, std::string description)
+    Command& AddCommand(const std::string& name, const std::string& description)
     {
         auto [it, inserted] = m_commands.emplace(name, Command(name, description));
         return it->second;
@@ -22,7 +23,7 @@ public:
         if (args.empty())
             return "Empty";
 
-        auto it = m_commands.find(args[0]);
+        const auto it = m_commands.find(args[0]);
 
         if (it == m_commands.end())
             return "Command not found";

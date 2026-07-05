@@ -4,6 +4,7 @@
 #include <functional>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <variant>
 
 class Option
@@ -13,7 +14,7 @@ public:
 
     template <typename T>
     Option(std::string name, std::string description, std::in_place_type_t<T>, std::function<bool(T)> validator)
-        : m_name(name), m_description(description)
+        : m_name(std::move(name)), m_description(std::move(description))
     {
         m_value = T{};
 
@@ -22,7 +23,7 @@ public:
 
     ~Option() = default;
 
-    OptionVariant GetValue() const
+    [[nodiscard]] OptionVariant GetValue() const
     {
         return m_value;
     };
@@ -33,8 +34,8 @@ public:
         OptionVariant newValue;
 
         std::visit(
-            [&newValue, &value](auto&& arg) {
-                using T = std::decay_t<decltype(arg)>;
+            [&newValue, &value]<typename T0>(T0&& arg) {
+                using T = std::decay_t<T0>;
 
                 if constexpr (std::is_same_v<T, int>)
                     try
@@ -72,13 +73,14 @@ public:
             throw std::invalid_argument("Invalid value for option");
 
         m_value = std::move(newValue);
-    };
+    }
 
-    std::string GetName() const
+    [[nodiscard]] std::string GetName() const
     {
         return m_name;
     }
-    std::string GetDescription() const
+
+    [[nodiscard]] std::string GetDescription() const
     {
         return m_description;
     }
