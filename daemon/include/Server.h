@@ -5,8 +5,10 @@
 #include "spdlog/sinks/stdout_color_sinks.h"
 #include "spdlog/spdlog.h"
 
-#include "Driver.h"
 #include "openskydimo/commands.hpp"
+
+#include "CommandDispatcher/Dispatcher.h"
+#include "Driver.h"
 
 class Server : public UnixSocketServer
 {
@@ -26,5 +28,6 @@ private:
     std::shared_ptr<spdlog::logger> m_logger = spdlog::stdout_color_mt("Server");
     CLI::App m_app;
     Driver m_driver;
+    Dispatcher m_dispatcher;
     openskydimo::commands::Args m_cmdArgs;
 };
