@@ -17,17 +17,17 @@ public:
         return it->second;
     }
 
-    std::string Dispatch(const std::vector<std::string>& args)
+    Response Dispatch(const std::vector<std::string>& args)
     {
         if (args.empty())
-            return "Empty";
+            return {1, "Empty args."};
 
         const auto it = m_commands.find(args[0]);
 
         if (it == m_commands.end())
-            return "Command not found";
+            return {1, "Command not found"};
 
-        return it->second.Execute(std::vector<std::string>(args.begin() + 1, args.end()));
+        return it->second.Execute(std::vector(args.begin() + 1, args.end()));
     }
 
 private:
