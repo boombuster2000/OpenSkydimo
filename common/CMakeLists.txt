@@ -9,6 +9,10 @@ add_library(openskydimo-common STATIC
 
         include/openskydimo/types/Response.h
         include/openskydimo/types/ColorRGB.h
+
+        include/openskydimo/CommandDispatcher/Dispatcher.h
+        include/openskydimo/CommandDispatcher/Command.h
+        include/openskydimo/CommandDispatcher/Option.h
 )
 
 FetchContent_Declare(
@@ -18,12 +22,6 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(spdlog)
 
-FetchContent_Declare(
-        CLI11
-        GIT_REPOSITORY https://github.com/CLIUtils/CLI11.git
-        GIT_TAG bfffd37e1f804ca4fae1caae106935791696b6a9
-)
-FetchContent_MakeAvailable(CLI11)
 
 target_include_directories(openskydimo-common PUBLIC include)
-target_link_libraries(openskydimo-common PUBLIC spdlog::spdlog CLI11)
+target_link_libraries(openskydimo-common PUBLIC spdlog::spdlog)

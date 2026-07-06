@@ -1,8 +1,7 @@
 #include <iostream>
 
-#include "CLI/CLI.hpp"
-
 #include "OpenSkydimoClient.h"
+#include "openskydimo/CommandDispatcher/Dispatcher.h"
 #include "openskydimo/commands.hpp"
 #include "openskydimo/config.h"
 #include "openskydimo/types/Response.h"
@@ -21,20 +20,34 @@ int main(const int argc, char* argv[])
     using namespace openskydimo::commands;
     OpenSkydimoClient client(s_socketPath, 128);
 
-    CLI::App app{"This program is used to communicate with the skydimo daemon and configure the LEDs."};
-    argv = app.ensure_utf8(argv);
+    Dispatcher dispatcher;
 
-    Args cmdArgs;
+    AddFillCmd(dispatcher, [&](const Command&) {
+        SendCommand(client, argc, argv);
+        return Response{};
+    });
 
-    AddFillCmd(&app, [&] { SendCommand(client, argc, argv); }, cmdArgs.fillColor);
+    Command& setCmd = AddSetCmd(dispatcher);
+    AddSetPortCmd(setCmd, [&](const Command&) {
+        SendCommand(client, argc, argv);
+        return Response{};
+    });
 
-    const auto setCmd = AddSetCmd(&app);
-    AddSetPortCmd(setCmd, [&] { SendCommand(client, argc, argv); }, cmdArgs.serialPort);
-    AddSetCountCmd(setCmd, [&] { SendCommand(client, argc, argv); }, cmdArgs.ledCount);
+    AddSetCountCmd(setCmd, [&](const Command&) {
+        SendCommand(client, argc, argv);
+        return Response{};
+    });
 
-    AddStartCmd(&app, [&] { SendCommand(client, argc, argv); });
-    AddStopCmd(&app, [&] { SendCommand(client, argc, argv); });
+    AddStartCmd(dispatcher, [&](const Command&) {
+        SendCommand(client, argc, argv);
+        return Response{};
+    });
 
-    CLI11_PARSE(app, argc, argv);
+    AddStopCmd(dispatcher, [&](const Command&) {
+        SendCommand(client, argc, argv);
+        return Response{};
+    });
+
+    dispatcher.Dispatch(std::vector<std::string>(argv + 1, argv + argc));
     return 0;
 }

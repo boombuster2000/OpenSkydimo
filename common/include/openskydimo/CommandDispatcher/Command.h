@@ -8,13 +8,13 @@
 
 #include "openskydimo/types/Response.h"
 
-#include "CommandDispatcher/Option.h"
+#include "Option.h"
+class Command;
+using Callback = std::function<Response(Command&)>;
 
 class Command
 {
 public:
-    using Callback = std::function<Response()>;
-
     Command(std::string name, std::string description) : m_name(std::move(name)), m_description(std::move(description))
     {
     }
@@ -79,7 +79,7 @@ public:
             for (size_t i = 0; i < m_options.size(); ++i)
                 m_options[i].SetValue(args[i]);
 
-            return m_callback();
+            return m_callback(*this);
         }
 
         return {.code = 1, .message = "error."};

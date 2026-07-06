@@ -3,7 +3,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "CommandDispatcher/Command.h"
+#include "Command.h"
 
 class Dispatcher
 {
