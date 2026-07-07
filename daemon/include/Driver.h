@@ -1,7 +1,4 @@
 #pragma once
-#include "openskydimo/types/ColorRGB.h"
-#include "spdlog/sinks/stdout_color_sinks.h"
-#include "spdlog/spdlog.h"
 #include <atomic>
 #include <chrono>
 #include <mutex>
@@ -10,21 +7,27 @@
 #include <thread>
 #include <vector>
 
+#include "spdlog/sinks/stdout_color_sinks.h"
+#include "spdlog/spdlog.h"
+
+#include "openskydimo/types/ColorRGB.h"
+#include "openskydimo/types/Response.h"
+
 class Driver
 {
 public:
     Driver() = default;
     ~Driver();
 
-    void SetSerialPort(const std::string& portName);
-    void SetBaudRate(int baudRate);
-    void SetLedCount(int ledCount);
-    void SetRefreshRate(int hz);
+    Response SetSerialPort(const std::string& portName);
+    Response SetBaudRate(int baudRate);
+    Response SetLedCount(int ledCount);
+    Response SetRefreshRate(int hz);
 
-    void OpenSerialConnection();
-    void CloseSerialConnection();
+    Response OpenSerialConnection();
+    Response CloseSerialConnection();
 
-    void Fill(ColorRGB color);
+    Response Fill(ColorRGB color);
 
 private:
     void SendColors() const;
