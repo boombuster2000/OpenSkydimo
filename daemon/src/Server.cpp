@@ -16,35 +16,27 @@ Server::Server(std::string socketPath, const int backlogSize, const int bufferSi
     // --- fill ---
     AddFillCmd(m_dispatcher, [this](const Command& cmd) {
         const ColorRGB fillColor = {(cmd.GetOption<int>("r")), (cmd.GetOption<int>("g")), (cmd.GetOption<int>("b"))};
-
-        m_driver.Fill(fillColor);
-        return Response{};
+        return m_driver.Fill(fillColor);
     });
 
     // --- set (command group) ---
     Command& setCmd = AddSetCmd(m_dispatcher);
     AddSetPortCmd(setCmd, [this](const Command& cmd) {
         const auto serialPort = cmd.GetOption<std::string>("port");
-        m_driver.SetSerialPort(serialPort);
-        return Response{};
+        return m_driver.SetSerialPort(serialPort);
     });
 
     AddSetCountCmd(setCmd, [this](const Command& cmd) {
         const auto ledCount = cmd.GetOption<int>("count");
-        m_driver.SetLedCount(ledCount);
-        return Response{};
+        return m_driver.SetLedCount(ledCount);
     });
 
     // --- start ---
-    AddStartCmd(m_dispatcher, [this](const Command&) {
-        m_driver.OpenSerialConnection();
-        return Response{};
-    });
+    AddStartCmd(m_dispatcher, [this](const Command&) { return m_driver.OpenSerialConnection(); });
 
     // --- stop ---
     AddStopCmd(m_dispatcher, [this](const Command&) {
-        m_driver.CloseSerialConnection();
-        return Response{};
+        return m_driver.CloseSerialConnection();
     });
 }
 
@@ -55,9 +47,7 @@ void Server::OnMessageReceived(const int clientFd, const std::string& message)
     {
         nlohmann::json json = nlohmann::json::parse(message);
         const std::vector<std::string> args = json["argv"];
-        m_dispatcher.Dispatch(args);
-        response.code = 0;
-        response.message = "OK";
+        response = m_dispatcher.Dispatch(args);
 
         if (const ssize_t result = SendResponse(clientFd, nlohmann::json(response).dump()); result < 0)
             m_logger->error("Failed to send response.");
