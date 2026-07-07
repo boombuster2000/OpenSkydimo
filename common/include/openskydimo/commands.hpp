@@ -51,11 +51,11 @@ inline Command& AddStopCmd(Dispatcher& dispatcher, const Callback& callback)
 inline Command& AddFillCmd(Dispatcher& dispatcher, const Callback& callback)
 {
     Command& fillCmd = dispatcher.AddCommand("fill", "Fill all LEDs with a solid color");
-    fillCmd.AddOption<int>("r", "Red component (0-255)",
+    fillCmd.AddOption<int>("red", "Red component (0-255)",
                            std::function([](const int value) { return value >= 0 && value <= 255; }));
-    fillCmd.AddOption<int>("g", "Green component (0-255)",
+    fillCmd.AddOption<int>("green", "Green component (0-255)",
                            std::function([](const int value) { return value >= 0 && value <= 255; }));
-    fillCmd.AddOption<int>("b", "Blue component (0-255)",
+    fillCmd.AddOption<int>("blue", "Blue component (0-255)",
                            std::function([](const int value) { return value >= 0 && value <= 255; }));
     fillCmd.SetCallback(callback);
 

@@ -15,7 +15,8 @@ Server::Server(std::string socketPath, const int backlogSize, const int bufferSi
 
     // --- fill ---
     AddFillCmd(m_dispatcher, [this](const Command& cmd) {
-        const ColorRGB fillColor = {(cmd.GetOption<int>("r")), (cmd.GetOption<int>("g")), (cmd.GetOption<int>("b"))};
+        const ColorRGB fillColor = {(cmd.GetOption<int>("red")), (cmd.GetOption<int>("green")),
+                                    (cmd.GetOption<int>("blue"))};
         return m_driver.Fill(fillColor);
     });
 
@@ -35,9 +36,7 @@ Server::Server(std::string socketPath, const int backlogSize, const int bufferSi
     AddStartCmd(m_dispatcher, [this](const Command&) { return m_driver.OpenSerialConnection(); });
 
     // --- stop ---
-    AddStopCmd(m_dispatcher, [this](const Command&) {
-        return m_driver.CloseSerialConnection();
-    });
+    AddStopCmd(m_dispatcher, [this](const Command&) { return m_driver.CloseSerialConnection(); });
 }
 
 void Server::OnMessageReceived(const int clientFd, const std::string& message)
@@ -46,22 +45,24 @@ void Server::OnMessageReceived(const int clientFd, const std::string& message)
     try
     {
         nlohmann::json json = nlohmann::json::parse(message);
-        const std::vector<std::string> args = json["argv"];
+        const std::vector<std::string> args = json.at("argv").get<std::vector<std::string>>();
         response = m_dispatcher.Dispatch(args);
-
-        if (const ssize_t result = SendResponse(clientFd, nlohmann::json(response).dump()); result < 0)
-            m_logger->error("Failed to send response.");
+    }
+    catch (const nlohmann::json::exception& e)
+    {
+        response = MakeError(1, std::format("malformed request: {}", e.what()));
+        m_logger->error("{}", response.message);
     }
     catch (const std::exception& e)
     {
-        response.code = 1;
-        response.message = std::string(e.what()) + "\n";
-        m_logger->error(response.message);
-
-        if (const ssize_t result = SendResponse(clientFd, nlohmann::json(response).dump()); result < 0)
-            m_logger->error("Failed to send response.");
+        response = MakeError(1, std::format("unexpected error: {}", e.what()));
+        m_logger->error("{}", response.message);
     }
+
+    if (const ssize_t result = SendResponse(clientFd, nlohmann::json(response).dump()); result < 0)
+        m_logger->error("Failed to send response.");
 }
+
 void Server::OnClientConnected(const int clientFd)
 {
     m_logger->info("Client connected: " + std::to_string(clientFd));

@@ -29,13 +29,10 @@ public:
 
     void SetValue(const std::string& value)
     {
-
         OptionVariant newValue;
-
         std::visit(
             [&newValue, &value]<typename T0>(T0&& arg) {
                 using T = std::decay_t<T0>;
-
                 if constexpr (std::is_same_v<T, int>)
                 {
                     try
@@ -44,7 +41,7 @@ public:
                     }
                     catch (const std::exception&)
                     {
-                        throw std::invalid_argument("Invalid value for option, expected int.");
+                        throw std::invalid_argument(std::format("expected int, got '{}'", value));
                     }
                 }
                 else if constexpr (std::is_same_v<T, float>)
@@ -55,7 +52,7 @@ public:
                     }
                     catch (const std::exception&)
                     {
-                        throw std::invalid_argument("Invalid value for option, expected float.");
+                        throw std::invalid_argument(std::format("expected float, got '{}'", value));
                     }
                 }
                 else if constexpr (std::is_same_v<T, bool>)
@@ -65,7 +62,7 @@ public:
                     else if (value == "false" || value == "0")
                         newValue = false;
                     else
-                        throw std::invalid_argument("Invalid value for option, expected bool.");
+                        throw std::invalid_argument(std::format("expected bool, got '{}'", value));
                 }
                 else if constexpr (std::is_same_v<T, std::string>)
                 {
@@ -73,10 +70,8 @@ public:
                 }
             },
             m_value);
-
         if (!m_validator(newValue))
-            throw std::invalid_argument("Invalid value for option");
-
+            throw std::invalid_argument(std::format("value '{}' failed validation", value));
         m_value = std::move(newValue);
     }
 

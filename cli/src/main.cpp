@@ -6,13 +6,13 @@
 #include "openskydimo/config.h"
 #include "openskydimo/types/Response.h"
 
-void SendCommand(OpenSkydimoClient& client, const int argc, char* argv[])
+Response SendCommand(OpenSkydimoClient& client, const int argc, char* argv[])
 {
     client.Connect();
     client.SendCommand(argc, argv);
-    auto [code, message] = client.GetResponse();
-    std::cout << "SERVER - " << message << std::endl;
+    Response response = client.GetResponse();
     client.Disconnect();
+    return response;
 }
 
 int main(const int argc, char* argv[])
@@ -22,32 +22,19 @@ int main(const int argc, char* argv[])
 
     Dispatcher dispatcher;
 
-    AddFillCmd(dispatcher, [&](const Command&) {
-        SendCommand(client, argc, argv);
-        return Response{};
-    });
+    AddFillCmd(dispatcher, [&](const Command&) { return SendCommand(client, argc, argv); });
 
     Command& setCmd = AddSetCmd(dispatcher);
-    AddSetPortCmd(setCmd, [&](const Command&) {
-        SendCommand(client, argc, argv);
-        return Response{};
-    });
+    AddSetPortCmd(setCmd, [&](const Command&) { return SendCommand(client, argc, argv); });
 
-    AddSetCountCmd(setCmd, [&](const Command&) {
-        SendCommand(client, argc, argv);
-        return Response{};
-    });
+    AddSetCountCmd(setCmd, [&](const Command&) { return SendCommand(client, argc, argv); });
 
-    AddStartCmd(dispatcher, [&](const Command&) {
-        SendCommand(client, argc, argv);
-        return Response{};
-    });
+    AddStartCmd(dispatcher, [&](const Command&) { return SendCommand(client, argc, argv); });
 
-    AddStopCmd(dispatcher, [&](const Command&) {
-        SendCommand(client, argc, argv);
-        return Response{};
-    });
+    AddStopCmd(dispatcher, [&](const Command&) { return SendCommand(client, argc, argv); });
 
-    dispatcher.Dispatch(std::vector<std::string>(argv + 1, argv + argc));
+    auto [code, message] = dispatcher.Dispatch(std::vector<std::string>(argv + 1, argv + argc));
+    std::cout << message;
+
     return 0;
 }

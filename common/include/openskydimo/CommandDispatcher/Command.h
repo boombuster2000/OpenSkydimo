@@ -77,7 +77,22 @@ public:
         if (m_callback)
         {
             for (size_t i = 0; i < m_options.size(); ++i)
-                m_options[i].SetValue(args[i]);
+            {
+                if (i >= args.size())
+                {
+                    return MakeError(1, std::format("missing argument for option '{}'", m_options[i].GetName()));
+                }
+
+                try
+                {
+                    m_options[i].SetValue(args[i]);
+                }
+                catch (const std::invalid_argument& e)
+                {
+                    return MakeError(
+                        1, std::format("invalid value for option '{}': {}", m_options[i].GetName(), e.what()));
+                }
+            }
 
             return m_callback(*this);
         }

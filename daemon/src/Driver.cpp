@@ -17,12 +17,12 @@ Driver::~Driver()
 Response Driver::SetRefreshRate(const int hz)
 {
     if (hz <= 0)
-        return {1, "Refresh rate must be > 0 Hz"};
+        return MakeError(1, "refresh rate must be > 0 Hz");
 
     logger->info("Setting refresh rate to {} Hz", hz);
     m_sendInterval = std::chrono::microseconds(1'000'000 / hz);
 
-    return {0, "OK"};
+    return MakeOk();
 }
 
 Response Driver::SetSerialPort(const std::string& portName)
@@ -30,14 +30,14 @@ Response Driver::SetSerialPort(const std::string& portName)
     logger->info("Setting serial port to '{}'", portName);
     m_portName = portName;
 
-    return {0, "OK"};
+    return MakeOk();
 }
 
 Response Driver::SetBaudRate(const int baudRate)
 {
     logger->info("Setting baud rate to {}", baudRate);
     m_baudRate = baudRate;
-    return {0, "OK"};
+    return MakeOk();
 }
 
 Response Driver::SetLedCount(const int ledCount)
@@ -45,7 +45,7 @@ Response Driver::SetLedCount(const int ledCount)
     logger->info("Setting LED count to {}", ledCount);
     m_ledCount = ledCount;
     AddHeaderToBuffer();
-    return {0, "OK"};
+    return MakeOk();
 }
 
 Response Driver::OpenSerialConnection()
@@ -53,21 +53,20 @@ Response Driver::OpenSerialConnection()
     if (m_running)
     {
         logger->warn("Tried to open serial connection but already running.");
-        return {2, "Tried to open serial connection but already running."};
+        return MakeWarning(2, "serial connection is already running");
     }
 
     logger->info("Opening serial connection on port '{}'", m_portName);
 
     if (m_portName.empty())
-        return {1, "No serial port set. Run 'openskydimo set port <path>' before starting "
-                   "(e.g. set port /dev/ttyUSB0)."};
+        return MakeError(1, "no serial port set", "openskydimo set port <path>");
 
     if (m_ledCount == 0)
-        return {1, "LED count has not been set. Run 'openskydimo set count <n>' before starting."};
+        return MakeError(1, "LED count not set", "openskydimo set count <n>");
 
     m_serialPort = open(m_portName.c_str(), O_RDWR | O_NOCTTY);
     if (m_serialPort < 0)
-        return {1, std::format("Unable to open serial port '{}'", m_portName)};
+        return MakeError(1, std::format("unable to open serial port '{}'", m_portName));
 
     logger->debug("Serial port '{}' opened, configuring tty attributes", m_portName);
 
@@ -76,7 +75,7 @@ Response Driver::OpenSerialConnection()
     {
         close(m_serialPort);
         m_serialPort = -1;
-        return {1, "Unable to get tty attributes"};
+        return MakeError(1, "unable to get tty attributes");
     }
 
     // Configure basic settings
@@ -120,7 +119,7 @@ Response Driver::OpenSerialConnection()
     default:
         close(m_serialPort);
         m_serialPort = -1;
-        return {1, std::format("Unsupported baud rate: {}", m_baudRate)};
+        return MakeError(1, std::format("unsupported baud rate: {}", m_baudRate));
     }
 
     cfsetispeed(&tty, baudRate);
@@ -131,7 +130,7 @@ Response Driver::OpenSerialConnection()
     {
         close(m_serialPort);
         m_serialPort = -1;
-        return {1, "Unable to set tty attributes"};
+        return MakeError(1, "unable to get tty attributes");
     }
 
     logger->info("Serial connection established on '{}' at {} baud, ready to send to {} LEDs", m_portName, m_baudRate,
@@ -141,7 +140,7 @@ Response Driver::OpenSerialConnection()
     m_sendThread = std::thread(&Driver::SendLoop, this);
     logger->info("Send thread started at ~{} Hz", 1'000'000 / m_sendInterval.count());
 
-    return {0, "OK"};
+    return MakeOk();
 }
 
 Response Driver::CloseSerialConnection()
@@ -149,7 +148,7 @@ Response Driver::CloseSerialConnection()
     if (m_serialPort < 0)
     {
         logger->warn("CloseSerialConnection called but no connection is open");
-        return {2, "CloseSerialConnection called but no connection is open"};
+        return MakeWarning(2, "no serial connection is open to close");
     }
 
     // Signal and join the thread before closing the port
@@ -164,7 +163,7 @@ Response Driver::CloseSerialConnection()
     m_serialPort = -1;
     logger->info("Serial connection closed");
 
-    return {0, "OK"};
+    return MakeOk();
 }
 
 void Driver::SendLoop()
@@ -211,7 +210,7 @@ void Driver::SendColors() const
 Response Driver::Fill(const ColorRGB color)
 {
     if (!m_running)
-        return {1, "Driver has not been started. Run 'openskydimo start' to start it."};
+        return MakeError(1, "driver not started", "openskydimo start");
 
     logger->info("Filling {} LEDs with RGB({}, {}, {})", m_ledCount, color.r, color.g, color.b);
 
@@ -227,7 +226,7 @@ Response Driver::Fill(const ColorRGB color)
     }
 
     logger->debug("Buffer updated with new fill colour");
-    return {0, "OK"};
+    return MakeOk();
 }
 void Driver::AddHeaderToBuffer()
 {
