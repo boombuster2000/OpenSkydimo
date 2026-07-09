@@ -25,10 +25,20 @@ public:
     Command(const Command&) = delete;
     Command& operator=(const Command&) = delete;
 
+    std::string GetName() const
+    {
+        return m_name;
+    }
+
+    std::string GetDescription() const
+    {
+        return m_description;
+    }
+
     template <typename T>
     Option& AddOption(std::string name, std::string description, std::function<bool(T)> validator)
     {
-        if (isCommandGroup)
+        if (m_isCommandGroup)
             throw std::logic_error("Cannot add a normal option: this Command already has subcommands.");
 
         m_options.emplace_back(std::move(name), std::move(description), std::in_place_type<T>, std::move(validator));
@@ -52,7 +62,7 @@ public:
         if (!m_options.empty())
             throw std::logic_error("Cannot add a subcommand: this Command already has normal options.");
 
-        isCommandGroup = true;
+        m_isCommandGroup = true;
 
         auto [it, inserted] = m_subcommands.emplace(name, Command(name, description));
         return it->second;
@@ -60,7 +70,7 @@ public:
 
     void SetCallback(const Callback& callback)
     {
-        if (isCommandGroup)
+        if (m_isCommandGroup)
             throw std::logic_error("Cannot set a callback: this Command is a command group.");
 
         m_callback = callback;
@@ -68,6 +78,28 @@ public:
 
     Response Execute(const std::vector<std::string>& args)
     {
+        if (!args.empty() && args[0] == "help")
+        {
+            Response response;
+            response.code = 0;
+            if (m_isCommandGroup)
+            {
+                for (const auto& command : m_subcommands | std::views::values)
+                {
+                    response.message += command.GetName() + "\t" + command.GetDescription() + "\n";
+                }
+
+                return response;
+            }
+
+            for (const auto& option : m_options)
+            {
+                response.message += option.GetName() + "\t" + option.GetDescription() + "\n";
+            }
+
+            return response;
+        }
+
         if (!args.empty())
         {
             if (const auto it = m_subcommands.find(args[0]); it != m_subcommands.end())
@@ -106,5 +138,5 @@ private:
     Callback m_callback;
     std::vector<Option> m_options;
     std::unordered_map<std::string, Command> m_subcommands;
-    bool isCommandGroup = false;
+    bool m_isCommandGroup = false;
 };

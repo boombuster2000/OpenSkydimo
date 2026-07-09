@@ -22,6 +22,19 @@ public:
         if (args.empty())
             return {1, "Empty args."};
 
+        if (args[0] == "help")
+        {
+            Response response;
+
+            response.code = 0;
+            for (const auto& command : m_commands | std::views::values)
+            {
+                response.message += command.GetName() + "\t" + command.GetDescription() + "\n";
+            }
+
+            return response;
+        }
+
         const auto it = m_commands.find(args[0]);
 
         if (it == m_commands.end())
