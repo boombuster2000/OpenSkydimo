@@ -10,9 +10,11 @@ add_library(openskydimo-common STATIC
         include/openskydimo/types/Response.h
         include/openskydimo/types/ColorRGB.h
 
-        include/openskydimo/CommandDispatcher/Dispatcher.h
-        include/openskydimo/CommandDispatcher/Command.h
+        include/openskydimo/CommandDispatcher/Describable.h
         include/openskydimo/CommandDispatcher/Option.h
+        include/openskydimo/CommandDispatcher/CommandNode.h
+        include/openskydimo/CommandDispatcher/Command.h
+        include/openskydimo/CommandDispatcher/CommandGroup.h
 )
 
 FetchContent_Declare(

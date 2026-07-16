@@ -1,0 +1,18 @@
+#pragma once
+
+#include <string>
+#include <vector>
+
+#include "Describable.h"
+
+class CommandNode : public Describable
+{
+public:
+    CommandNode(const std::string& name, const std::string& description) : Describable(name, description)
+    {
+    }
+
+    ~CommandNode() override = default;
+
+    virtual Response Execute(std::vector<std::string> args) = 0;
+};
