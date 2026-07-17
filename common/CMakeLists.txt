@@ -28,6 +28,13 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(spdlog)
 
+FetchContent_Declare(
+        nlohmann_json
+        GIT_REPOSITORY https://github.com/nlohmann/json.git
+        GIT_TAG v3.12.0
+)
+FetchContent_MakeAvailable(nlohmann_json)
+
 
 target_include_directories(openskydimo-common PUBLIC include)
-target_link_libraries(openskydimo-common PUBLIC spdlog::spdlog)
+target_link_libraries(openskydimo-common PUBLIC spdlog::spdlog nlohmann_json::nlohmann_json)
