@@ -76,6 +76,24 @@ public:
         m_value = std::move(newValue);
     }
 
+    [[nodiscard]] std::string GetTypeName() const
+    {
+        return std::visit(
+            []<typename T>(const T&) -> std::string {
+                if constexpr (std::is_same_v<T, std::string>)
+                    return "string";
+                else if constexpr (std::is_same_v<T, int>)
+                    return "int";
+                else if constexpr (std::is_same_v<T, float>)
+                    return "float";
+                else if constexpr (std::is_same_v<T, bool>)
+                    return "bool";
+                
+                return "unknown";
+            },
+            m_value);
+    }
+
 private:
     OptionVariant m_value;
     std::function<bool(OptionVariant)> m_validator;
