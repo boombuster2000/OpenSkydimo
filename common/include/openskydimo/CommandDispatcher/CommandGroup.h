@@ -31,9 +31,15 @@ public:
         {
             if (args[0] == "help")
                 return PrintHelp();
+
             if (const auto it = m_subcommands.find(args[0]); it != m_subcommands.end())
                 return it->second->Execute(std::vector(args.begin() + 1, args.end()));
         }
+        else
+        {
+            return PrintHelp();
+        }
+
         return {1, "Unknown Command"};
     }
 

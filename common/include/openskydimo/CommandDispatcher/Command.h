@@ -38,7 +38,7 @@ public:
     }
     Response Execute(const std::vector<std::string> args) override
     {
-        if (!args.empty() && args[0] == "help")
+        if (args.empty() || args[0] == "help")
             return PrintHelp();
 
         for (size_t i = 0; i < m_options.size(); ++i)
