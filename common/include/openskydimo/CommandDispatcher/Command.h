@@ -9,7 +9,7 @@
 #include <utility>
 #include <vector>
 class Command;
-using Callback = std::function<Response(Command&)>;
+using Callback = std::function<Response(const Command&)>;
 class Command : public CommandNode
 {
 public:
