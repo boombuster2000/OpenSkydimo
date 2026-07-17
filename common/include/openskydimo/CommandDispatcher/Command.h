@@ -38,14 +38,14 @@ public:
     }
     Response Execute(const std::vector<std::string> args) override
     {
-        if (args.empty() || args[0] == "help")
+        if ((args.empty() && !m_options.empty()) || (!args.empty() && args[0] == "help"))
             return PrintHelp();
 
         for (size_t i = 0; i < m_options.size(); ++i)
         {
             if (i >= args.size())
                 return MakeError(1, std::format("missing argument for option '{}'", m_options[i].GetName()));
-            
+
             try
             {
                 m_options[i].SetValue(args[i]);
