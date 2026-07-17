@@ -71,7 +71,11 @@ std::string UnixSocketClient::ReceiveMessage() const
         throw std::runtime_error(std::string("Failed to receive length: ") + strerror(errno));
     length = ntohl(length);
 
+    if (length > static_cast<uint32_t>(m_bufferSize))
+        throw std::runtime_error("Received message length exceeds maximum buffer size");
+
     std::string message(length, '\0');
+    
     size_t totalRead = 0;
     while (totalRead < length)
     {

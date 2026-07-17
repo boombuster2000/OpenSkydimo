@@ -28,6 +28,7 @@ public:
     virtual void OnClientDisconnected(int clientFd);
 
     virtual void OnFailedToReceive(int clientFd);
+    virtual void OnExceedsBufferSize(int clientFd);
     virtual void OnFailedToSend(int clientFd, const std::string& messageSent);
     virtual void OnFailedClientConnection();
 

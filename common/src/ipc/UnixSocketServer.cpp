@@ -123,6 +123,14 @@ void UnixSocketServer::HandleClient(const int clientFd)
             return;
 
         messageLength = ntohl(messageLength);
+
+        if (messageLength > static_cast<uint32_t>(m_bufferSize))
+        {
+            OnExceedsBufferSize(clientFd);
+            CloseClientConnection(clientFd);
+            return;
+        }
+
         std::string message(messageLength, '\0');
 
         if (!isStatusOK(RecvAll(clientFd, message.data(), messageLength)))
@@ -188,6 +196,10 @@ void UnixSocketServer::OnClientDisconnected(const int clientFd)
 }
 
 void UnixSocketServer::OnFailedToReceive(const int clientFd)
+{
+}
+
+void UnixSocketServer::OnExceedsBufferSize(int clientFd)
 {
 }
 
