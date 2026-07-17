@@ -30,6 +30,7 @@ public:
     Response Fill(ColorRGB color);
 
 private:
+    void StopAndCleanup();
     void SendColors() const;
     void SendLoop();
     void AddHeaderToBuffer();

@@ -7,6 +7,16 @@
 
 Driver::~Driver()
 {
+    StopAndCleanup();
+}
+
+void Driver::StopAndCleanup()
+{
+    m_running = false;
+
+    if (m_sendThread.joinable())
+        m_sendThread.join();
+
     if (m_serialPort >= 0)
     {
         close(m_serialPort);
@@ -55,6 +65,8 @@ Response Driver::OpenSerialConnection()
         logger->warn("Tried to open serial connection but already running.");
         return MakeWarning(2, "serial connection is already running");
     }
+
+    StopAndCleanup();
 
     logger->info("Opening serial connection on port '{}'", m_portName);
 
@@ -151,16 +163,8 @@ Response Driver::CloseSerialConnection()
         return MakeWarning(2, "no serial connection is open to close");
     }
 
-    // Signal and join the thread before closing the port
-    logger->info("Stopping send thread");
-    m_running = false;
-    if (m_sendThread.joinable())
-        m_sendThread.join();
-    logger->info("Send thread stopped");
-
     logger->info("Closing serial connection on '{}'", m_portName);
-    close(m_serialPort);
-    m_serialPort = -1;
+    StopAndCleanup();
     logger->info("Serial connection closed");
 
     return MakeOk();
