@@ -3,6 +3,8 @@
 #include <string>
 #include <vector>
 
+#include "openskydimo/types/Response.h"
+
 #include "Describable.h"
 
 class CommandNode : public Describable
