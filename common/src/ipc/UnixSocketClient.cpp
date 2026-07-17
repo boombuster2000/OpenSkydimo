@@ -50,16 +50,18 @@ void UnixSocketClient::Disconnect()
 void UnixSocketClient::SendMessage(const std::string& message) const
 {
     const uint32_t length = htonl(message.size());
-    if (send(m_socket, &length, sizeof(length), 0) == -1)
+    if (send(m_socket, &length, sizeof(length), MSG_NOSIGNAL) == -1)
         throw std::runtime_error(std::string("Failed to send length: ") + strerror(errno));
 
     size_t totalBytesWritten = 0;
     while (totalBytesWritten < message.size())
     {
         const ssize_t bytesWritten =
-            write(m_socket, message.c_str() + totalBytesWritten, message.size() - totalBytesWritten);
+            send(m_socket, message.c_str() + totalBytesWritten, message.size() - totalBytesWritten, MSG_NOSIGNAL);
+
         if (bytesWritten == -1)
             throw std::runtime_error(std::string("Failed to send: ") + strerror(errno));
+        
         totalBytesWritten += bytesWritten;
     }
 }
@@ -75,7 +77,7 @@ std::string UnixSocketClient::ReceiveMessage() const
         throw std::runtime_error("Received message length exceeds maximum buffer size");
 
     std::string message(length, '\0');
-    
+
     size_t totalRead = 0;
     while (totalRead < length)
     {

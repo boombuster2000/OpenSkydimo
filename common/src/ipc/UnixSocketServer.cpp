@@ -143,7 +143,7 @@ void UnixSocketServer::HandleClient(const int clientFd)
 ssize_t UnixSocketServer::SendResponse(const int clientFd, const std::string& response)
 {
     const uint32_t length = htonl(response.size());
-    if (send(clientFd, &length, sizeof(length), 0) == -1)
+    if (send(clientFd, &length, sizeof(length), MSG_NOSIGNAL) == -1)
     {
         OnFailedToSend(clientFd, response);
         return -1;
@@ -152,12 +152,15 @@ ssize_t UnixSocketServer::SendResponse(const int clientFd, const std::string& re
     size_t totalSent = 0;
     while (totalSent < response.size())
     {
-        const ssize_t bytesSent = send(clientFd, response.c_str() + totalSent, response.size() - totalSent, 0);
+        const ssize_t bytesSent =
+            send(clientFd, response.c_str() + totalSent, response.size() - totalSent, MSG_NOSIGNAL);
+
         if (bytesSent == -1)
         {
             OnFailedToSend(clientFd, response);
             return -1;
         }
+        
         totalSent += bytesSent;
     }
 
