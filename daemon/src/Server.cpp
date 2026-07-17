@@ -9,19 +9,20 @@
 #include "openskydimo/types/Response.h"
 
 Server::Server(std::string socketPath, const int backlogSize, const int bufferSize)
-    : UnixSocketServer(std::move(socketPath), backlogSize, bufferSize)
+    : UnixSocketServer(std::move(socketPath), backlogSize, bufferSize),
+      m_rootCommandGroup("openskydimo", "Program to control skydimo lights on linux.")
 {
     using namespace openskydimo::commands;
 
     // --- fill ---
-    AddFillCmd(m_dispatcher, [this](const Command& cmd) {
+    AddFillCmd(&m_rootCommandGroup, [this](const Command& cmd) {
         const ColorRGB fillColor = {(cmd.GetOption<int>("red")), (cmd.GetOption<int>("green")),
                                     (cmd.GetOption<int>("blue"))};
         return m_driver.Fill(fillColor);
     });
 
     // --- set (command group) ---
-    Command& setCmd = AddSetCmd(m_dispatcher);
+    CommandGroup* setCmd = AddSetCmd(&m_rootCommandGroup);
     AddSetPortCmd(setCmd, [this](const Command& cmd) {
         const auto serialPort = cmd.GetOption<std::string>("port");
         return m_driver.SetSerialPort(serialPort);
@@ -33,10 +34,10 @@ Server::Server(std::string socketPath, const int backlogSize, const int bufferSi
     });
 
     // --- start ---
-    AddStartCmd(m_dispatcher, [this](const Command&) { return m_driver.OpenSerialConnection(); });
+    AddStartCmd(&m_rootCommandGroup, [this](const Command&) { return m_driver.OpenSerialConnection(); });
 
     // --- stop ---
-    AddStopCmd(m_dispatcher, [this](const Command&) { return m_driver.CloseSerialConnection(); });
+    AddStopCmd(&m_rootCommandGroup, [this](const Command&) { return m_driver.CloseSerialConnection(); });
 }
 
 void Server::OnMessageReceived(const int clientFd, const std::string& message)
@@ -46,7 +47,7 @@ void Server::OnMessageReceived(const int clientFd, const std::string& message)
     {
         nlohmann::json json = nlohmann::json::parse(message);
         const std::vector<std::string> args = json.at("argv").get<std::vector<std::string>>();
-        response = m_dispatcher.Dispatch(args);
+        response = m_rootCommandGroup.Execute(args);
     }
     catch (const nlohmann::json::exception& e)
     {

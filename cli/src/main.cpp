@@ -1,7 +1,7 @@
 #include <iostream>
 
 #include "OpenSkydimoClient.h"
-#include "openskydimo/CommandDispatcher/Dispatcher.h"
+#include "openskydimo/CommandDispatcher/CommandGroup.h"
 #include "openskydimo/commands.hpp"
 #include "openskydimo/config.h"
 #include "openskydimo/types/Response.h"
@@ -20,20 +20,20 @@ int main(const int argc, char* argv[])
     using namespace openskydimo::commands;
     OpenSkydimoClient client(s_socketPath, 128);
 
-    Dispatcher dispatcher;
+    CommandGroup rootCommandGroup("openskydimo", "Program to control skydimo lights on linux.");
 
-    AddFillCmd(dispatcher, [&](const Command&) { return SendCommand(client, argc, argv); });
+    AddFillCmd(&rootCommandGroup, [&](const Command&) { return SendCommand(client, argc, argv); });
 
-    Command& setCmd = AddSetCmd(dispatcher);
+    CommandGroup* setCmd = AddSetCmd(&rootCommandGroup);
     AddSetPortCmd(setCmd, [&](const Command&) { return SendCommand(client, argc, argv); });
 
     AddSetCountCmd(setCmd, [&](const Command&) { return SendCommand(client, argc, argv); });
 
-    AddStartCmd(dispatcher, [&](const Command&) { return SendCommand(client, argc, argv); });
+    AddStartCmd(&rootCommandGroup, [&](const Command&) { return SendCommand(client, argc, argv); });
 
-    AddStopCmd(dispatcher, [&](const Command&) { return SendCommand(client, argc, argv); });
+    AddStopCmd(&rootCommandGroup, [&](const Command&) { return SendCommand(client, argc, argv); });
 
-    auto [code, message] = dispatcher.Dispatch(std::vector<std::string>(argv + 1, argv + argc));
+    auto [code, message] = rootCommandGroup.Execute(std::vector<std::string>(argv + 1, argv + argc));
     std::cout << message;
 
     return 0;

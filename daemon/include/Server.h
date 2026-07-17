@@ -5,7 +5,7 @@
 #include "spdlog/spdlog.h"
 
 #include "Driver.h"
-#include "openskydimo/CommandDispatcher/Dispatcher.h"
+#include "openskydimo/CommandDispatcher/CommandGroup.h"
 
 class Server : public UnixSocketServer
 {
@@ -24,5 +24,5 @@ public:
 private:
     std::shared_ptr<spdlog::logger> m_logger = spdlog::stdout_color_mt("Server");
     Driver m_driver;
-    Dispatcher m_dispatcher;
+    CommandGroup m_rootCommandGroup;
 };

@@ -23,6 +23,12 @@ public:
         return dynamic_cast<Command*>(it->second.get());
     }
 
+    CommandGroup* AddCommandGroup(const std::string& name, const std::string& description)
+    {
+        auto [it, inserted] = m_subcommands.emplace(name, std::make_unique<CommandGroup>(name, description));
+        return dynamic_cast<CommandGroup*>(it->second.get());
+    }
+
     Response Execute(std::vector<std::string> args) override
     {
         if (!args.empty())

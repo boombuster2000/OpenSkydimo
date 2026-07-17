@@ -21,7 +21,7 @@ public:
         m_validator = [validator](const OptionVariant& value) { return validator(std::get<T>(value)); };
     }
 
-    OptionVariant GetValue()
+    [[nodiscard]] OptionVariant GetValue() const
     {
         return m_value;
     }
