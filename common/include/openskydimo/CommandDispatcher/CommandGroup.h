@@ -25,22 +25,16 @@ public:
         auto [it, inserted] = m_subcommands.emplace(name, std::make_unique<CommandGroup>(name, description));
         return static_cast<CommandGroup*>(it->second.get());
     }
+    
     Response Execute(std::vector<std::string> args) override
     {
-        if (!args.empty())
-        {
-            if (args[0] == "help")
-                return PrintHelp();
-
-            if (const auto it = m_subcommands.find(args[0]); it != m_subcommands.end())
-                return it->second->Execute(std::vector(args.begin() + 1, args.end()));
-        }
-        else
-        {
+        if (args.empty() || args[0] == "help")
             return PrintHelp();
-        }
 
-        return {1, "Unknown Command"};
+        if (const auto it = m_subcommands.find(args[0]); it != m_subcommands.end())
+            return it->second->Execute(std::vector(args.begin() + 1, args.end()));
+
+        return MakeError(1, std::format("Unknown command: {}", args[0]));
     }
 
 private:
