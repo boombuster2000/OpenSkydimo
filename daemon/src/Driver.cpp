@@ -73,6 +73,12 @@ Response Driver::SetLedCount(const int ledCount)
         return MakeWarning(2, "connection must be closed first, run openskydimo stop");
     }
 
+    if (ledCount < 0 || ledCount > 1024)
+    {
+        logger->warn("Tried to set LED count to {}", ledCount);
+        return MakeError(1, std::format("LED count must be between 0 and 1024, got {}", ledCount));
+    }
+
     logger->info("Setting LED count to {}", ledCount);
     m_ledCount = ledCount;
     AddHeaderToBuffer();
@@ -219,17 +225,29 @@ void Driver::SendColors() const
 {
     logger->debug("Sending {} bytes to '{}'", m_buffer.size(), m_portName);
 
-    const ssize_t bytesWritten = write(m_serialPort, m_buffer.data(), m_buffer.size());
+    size_t totalWritten = 0;
+    const auto* data = reinterpret_cast<const char*>(m_buffer.data());
 
-    if (bytesWritten < 0)
-        throw SerialWriteException(
-            std::format("Failed to write to serial port '{}': {} (errno: {})", m_portName, strerror(errno), errno));
+    while (totalWritten < m_buffer.size())
+    {
+        const ssize_t bytesWritten = write(m_serialPort, data + totalWritten, m_buffer.size() - totalWritten);
 
-    if (static_cast<size_t>(bytesWritten) != m_buffer.size())
-        throw SerialWriteException(
-            std::format("Incomplete write to '{}': {}/{} bytes", m_portName, bytesWritten, m_buffer.size()));
+        if (bytesWritten < 0)
+        {
+            if (errno == EINTR)
+                continue;
 
-    logger->debug("Sent {} bytes successfully", bytesWritten);
+            throw SerialWriteException(
+                std::format("Failed to write to serial port '{}': {} (errno: {})", m_portName, strerror(errno), errno));
+        }
+
+        if (bytesWritten == 0)
+            throw SerialWriteException(std::format("write() returned 0 unexpectedly on '{}'", m_portName));
+
+        totalWritten += static_cast<size_t>(bytesWritten);
+    }
+
+    logger->debug("Sent {} bytes successfully", totalWritten);
 }
 
 Response Driver::Fill(const ColorRGB color)
