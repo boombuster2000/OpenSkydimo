@@ -27,7 +27,10 @@ void Driver::StopAndCleanup()
 Response Driver::SetRefreshRate(const int hz)
 {
     if (hz <= 0)
-        return MakeError(1, "refresh rate must be > 0 Hz");
+        return MakeError(1, "refresh rate must be > 0Hz");
+
+    if (hz >= 1'000'000)
+        return MakeError(1, "refresh rate must be less than 1,000,000Hz.");
 
     logger->info("Setting refresh rate to {} Hz", hz);
     m_sendInterval = std::chrono::microseconds(1'000'000 / hz);
