@@ -44,14 +44,15 @@ public:
         for (size_t i = 0; i < m_options.size(); ++i)
         {
             if (i >= args.size())
-                return {0, std::format("missing argument for option '{}'", m_options[i].GetName())};
+                return MakeError(1, std::format("missing argument for option '{}'", m_options[i].GetName()));
+            
             try
             {
                 m_options[i].SetValue(args[i]);
             }
             catch (const std::invalid_argument& e)
             {
-                return {0, std::format("invalid value for option '{}': {}", m_options[i].GetName(), e.what())};
+                return MakeError(1, std::format("invalid value for option '{}': {}", m_options[i].GetName(), e.what()));
             }
         }
         return m_callback(*this);
