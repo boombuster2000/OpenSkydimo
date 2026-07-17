@@ -12,7 +12,7 @@ Driver::~Driver()
 
 void Driver::StopAndCleanup()
 {
-    m_running = false;
+    m_isConnectionOpened = false;
 
     if (m_sendThread.joinable())
         m_sendThread.join();
@@ -40,6 +40,12 @@ Response Driver::SetRefreshRate(const int hz)
 
 Response Driver::SetSerialPort(const std::string& portName)
 {
+    if (m_isConnectionOpened)
+    {
+        logger->warn("Tried to set serial port whilst connection is opened.");
+        return MakeError(2, "connection must be closed first, run openskydimo stop");
+    }
+
     logger->info("Setting serial port to '{}'", portName);
     m_portName = portName;
 
@@ -48,6 +54,12 @@ Response Driver::SetSerialPort(const std::string& portName)
 
 Response Driver::SetBaudRate(const int baudRate)
 {
+    if (m_isConnectionOpened)
+    {
+        logger->warn("Tried to set baud rate whilst connection is opened.");
+        return MakeError(2, "connection must be closed first, run openskydimo stop");
+    }
+
     logger->info("Setting baud rate to {}", baudRate);
     m_baudRate = baudRate;
     return MakeOk();
@@ -55,6 +67,12 @@ Response Driver::SetBaudRate(const int baudRate)
 
 Response Driver::SetLedCount(const int ledCount)
 {
+    if (m_isConnectionOpened)
+    {
+        logger->warn("Tried to set LED count whilst connection is opened.");
+        return MakeWarning(2, "connection must be closed first, run openskydimo stop");
+    }
+
     logger->info("Setting LED count to {}", ledCount);
     m_ledCount = ledCount;
     AddHeaderToBuffer();
@@ -63,7 +81,7 @@ Response Driver::SetLedCount(const int ledCount)
 
 Response Driver::OpenSerialConnection()
 {
-    if (m_running)
+    if (m_isConnectionOpened)
     {
         logger->warn("Tried to open serial connection but already running.");
         return MakeWarning(2, "serial connection is already running");
@@ -151,7 +169,7 @@ Response Driver::OpenSerialConnection()
     logger->info("Serial connection established on '{}' at {} baud, ready to send to {} LEDs", m_portName, m_baudRate,
                  m_ledCount);
 
-    m_running = true;
+    m_isConnectionOpened = true;
     m_sendThread = std::thread(&Driver::SendLoop, this);
     logger->info("Send thread started at ~{} Hz", 1'000'000 / m_sendInterval.count());
 
@@ -177,7 +195,7 @@ void Driver::SendLoop()
 {
     using clock = std::chrono::steady_clock;
 
-    while (m_running)
+    while (m_isConnectionOpened)
     {
         const auto next = clock::now() + m_sendInterval;
 
@@ -189,7 +207,7 @@ void Driver::SendLoop()
         catch (const SerialWriteException& e)
         {
             logger->error("Send loop write error: {}", e.what());
-            m_running = false; // Stop rather than spam errors
+            m_isConnectionOpened = false; // Stop rather than spam errors
             break;
         }
 
@@ -216,7 +234,7 @@ void Driver::SendColors() const
 
 Response Driver::Fill(const ColorRGB color)
 {
-    if (!m_running)
+    if (!m_isConnectionOpened)
         return MakeError(1, "driver not started", "openskydimo start");
 
     logger->info("Filling {} LEDs with RGB({}, {}, {})", m_ledCount, color.r, color.g, color.b);

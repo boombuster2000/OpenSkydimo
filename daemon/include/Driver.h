@@ -50,7 +50,7 @@ private:
     mutable std::mutex m_bufferMutex;
 
     std::thread m_sendThread;
-    std::atomic<bool> m_running{false};
+    std::atomic<bool> m_isConnectionOpened{false};
 };
 
 class SkydimoException : public std::runtime_error
