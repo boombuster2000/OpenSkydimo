@@ -1,6 +1,7 @@
 #include "Server.h"
 
 #include <algorithm>
+#include <format>
 #include <utility>
 
 #include <nlohmann/json.hpp>
