@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <utility>
 #include <variant>
 
 #include "Describable.h"
@@ -11,9 +12,8 @@ class Option : public Describable
 {
 public:
     template <typename T>
-    Option(const std::string name, const std::string description, std::in_place_type_t<T>,
-           std::function<bool(T)> validator)
-        : Describable(name, description)
+    Option(std::string name, std::string description, std::in_place_type_t<T>, std::function<bool(T)> validator)
+        : Describable(std::move(name), std::move(description))
     {
         m_value = T{};
         m_validator = [validator](const OptionVariant& value) { return validator(std::get<T>(value)); };
