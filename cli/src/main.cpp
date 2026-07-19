@@ -33,8 +33,22 @@ int main(const int argc, char* argv[])
 
     AddStopCmd(&rootCommandGroup, [&](const Command&) { return SendCommand(client, argc, argv); });
 
-    auto [code, message] = rootCommandGroup.Execute(std::vector<std::string>(argv + 1, argv + argc));
-    std::cout << message;
+    try
+    {
+        auto [code, message] = rootCommandGroup.Execute(std::vector<std::string>(argv + 1, argv + argc));
+
+        if (!message.empty())
+        {
+            std::cout << message << '\n';
+        }
+
+        return code;
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << "error: " << e.what() << '\n';
+        return 1;
+    }
 
     return 0;
 }
