@@ -24,13 +24,21 @@ void Driver::StopAndCleanup()
     }
 }
 
-Response Driver::SetRefreshRate(const int hz)
+std::optional<Response> Driver::RequireStopped(const char* action) const
 {
     if (m_isConnectionOpened)
     {
-        logger->warn("Tried to set refresh rate whilst connection is opened.");
-        return MakeError(2, "connection must be closed first, run openskydimo stop");
+        logger->warn("Tried to {} whilst connection is opened.", action);
+        return MakeWarning(2, "connection must be closed first, run openskydimo stop");
     }
+
+    return std::nullopt;
+}
+
+Response Driver::SetRefreshRate(const int hz)
+{
+    if (auto response = RequireStopped("set refresh rate"))
+        return *response;
 
     if (hz <= 0)
         return MakeError(1, "refresh rate must be > 0Hz");
@@ -46,11 +54,8 @@ Response Driver::SetRefreshRate(const int hz)
 
 Response Driver::SetSerialPort(const std::string& portName)
 {
-    if (m_isConnectionOpened)
-    {
-        logger->warn("Tried to set serial port whilst connection is opened.");
-        return MakeError(2, "connection must be closed first, run openskydimo stop");
-    }
+    if (auto response = RequireStopped("set serial port"))
+        return *response;
 
     logger->info("Setting serial port to '{}'", portName);
     m_portName = portName;
@@ -60,11 +65,8 @@ Response Driver::SetSerialPort(const std::string& portName)
 
 Response Driver::SetBaudRate(const int baudRate)
 {
-    if (m_isConnectionOpened)
-    {
-        logger->warn("Tried to set baud rate whilst connection is opened.");
-        return MakeError(2, "connection must be closed first, run openskydimo stop");
-    }
+    if (auto response = RequireStopped("set baud rate"))
+        return *response;
 
     logger->info("Setting baud rate to {}", baudRate);
     m_baudRate = baudRate;
@@ -73,11 +75,8 @@ Response Driver::SetBaudRate(const int baudRate)
 
 Response Driver::SetLedCount(const int ledCount)
 {
-    if (m_isConnectionOpened)
-    {
-        logger->warn("Tried to set LED count whilst connection is opened.");
-        return MakeWarning(2, "connection must be closed first, run openskydimo stop");
-    }
+    if (auto response = RequireStopped("set LED count"))
+        return *response;
 
     if (ledCount < 0 || ledCount > 1024)
     {
@@ -93,11 +92,8 @@ Response Driver::SetLedCount(const int ledCount)
 
 Response Driver::OpenSerialConnection()
 {
-    if (m_isConnectionOpened)
-    {
-        logger->warn("Tried to open serial connection but already running.");
-        return MakeWarning(2, "serial connection is already running");
-    }
+    if (auto response = RequireStopped("open serial connection"))
+        return *response;
 
     StopAndCleanup();
 

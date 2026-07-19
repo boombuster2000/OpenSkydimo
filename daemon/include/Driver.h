@@ -2,6 +2,7 @@
 #include <atomic>
 #include <chrono>
 #include <mutex>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <thread>
@@ -31,6 +32,7 @@ public:
 
 private:
     void StopAndCleanup();
+    std::optional<Response> RequireStopped(const char* action) const;
     void SendColors() const;
     void SendLoop();
     void AddHeaderToBuffer();
