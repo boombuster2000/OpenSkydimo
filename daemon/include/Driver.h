@@ -38,7 +38,7 @@ private:
     void AddHeaderToBuffer();
 
 private:
-    std::shared_ptr<spdlog::logger> logger = spdlog::stdout_color_mt("Driver");
+    std::shared_ptr<spdlog::logger> m_logger = spdlog::stdout_color_mt("Driver");
 
     static constexpr int m_headerSize = 6;
 
