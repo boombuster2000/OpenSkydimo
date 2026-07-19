@@ -1,5 +1,8 @@
 #pragma once
 
+#include <memory>
+#include <unordered_map>
+
 #include "openskydimo/types/Response.h"
 
 #include "Command.h"
