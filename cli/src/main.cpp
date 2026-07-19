@@ -6,7 +6,7 @@
 #include "openskydimo/config.h"
 #include "openskydimo/types/Response.h"
 
-Response SendCommand(OpenSkydimoClient& client, const int argc, char* argv[])
+static Response SendCommand(OpenSkydimoClient& client, const int argc, char* argv[])
 {
     client.Connect();
     client.SendCommand(argc, argv);
