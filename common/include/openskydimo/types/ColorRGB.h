@@ -29,7 +29,7 @@ struct fmt::formatter<ColorRGB> : formatter<std::string>
 {
     auto format(const ColorRGB& my, format_context& ctx) const -> decltype(ctx.out())
     {
-        return format_to(ctx.out(), "({},{},{})", static_cast<int>(my.r), static_cast<int>(my.g),
-                         static_cast<int>(my.b));
+        return format_to(ctx.out(), "({},{},{})", std::to_integer<int>(my.r), std::to_integer<int>(my.g),
+                         std::to_integer<int>(my.b));
     }
 };

@@ -1,5 +1,7 @@
 add_executable(openskydimo-cli
         src/main.cpp
+        include/OpenSkydimoClient.h
+        src/OpenSkydimoClient.cpp
 )
 
 target_include_directories(openskydimo-cli PRIVATE include)

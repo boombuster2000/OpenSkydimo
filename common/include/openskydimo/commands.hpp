@@ -1,69 +1,62 @@
 #pragma once
 
-#include <cstdint>
 #include <functional>
 #include <string>
 
-#include "CLI/App.hpp"
-#include "openskydimo/types.h"
+#include "CommandDispatcher/Command.h"
+#include "CommandDispatcher/CommandGroup.h"
 
 namespace openskydimo::commands
 {
 
-struct Args
+inline CommandGroup* AddSetCmd(CommandGroup* root)
 {
-    ColorRGB fillColor{};
-    std::string serialPort;
-    uint8_t ledCount{};
-};
-
-inline CLI::App* AddSetCmd(CLI::App* app)
-{
-    return app->add_subcommand("set", "Configure LED driver settings")->require_subcommand(1);
+    return root->AddCommandGroup("set", "Configure LED driver settings");
 }
 
-inline CLI::App* AddSetPortCmd(CLI::App* setCmd, const std::function<void()>& callback, std::string& serialPort)
+inline Command* AddSetPortCmd(CommandGroup* setCmdGroup, const Callback& callback)
 {
-    auto* portCmd = setCmd->add_subcommand("port", "Configure the serial port for LED communication");
-    portCmd->add_option("port", serialPort, "Serial port path (e.g. /dev/ttyUSB0)")->required();
-    portCmd->callback(callback);
+    Command* setPortCmd = setCmdGroup->AddCommand("port", "Configure the serial port for LED communication");
+    setPortCmd->AddOption<std::string>("port", "Serial port path (e.g. /dev/ttyUSB0)",
+                                       std::function([](const std::string& value) { return !value.empty(); }));
+    setPortCmd->SetCallback(callback);
 
-    return portCmd;
+    return setPortCmd;
 }
 
-inline CLI::App* AddSetCountCmd(CLI::App* setCmd, const std::function<void()>& callback, uint8_t& ledCount)
+inline Command* AddSetCountCmd(CommandGroup* setCmdGroup, const Callback& callback)
 {
-    auto* countCmd = setCmd->add_subcommand("count", "Configure the total number of LEDs in the strip");
-    countCmd->add_option("count", ledCount, "Number of LEDs (1-255)")->required()->check(CLI::Range(1, 255));
-    countCmd->callback(callback);
-
-    return countCmd;
+    Command* setCountCmd = setCmdGroup->AddCommand("count", "Configure the total number of LEDs in the strip");
+    setCountCmd->AddOption<int>("count", "Number of LEDs (1-255)",
+                                std::function([](const int value) { return value >= 1 && value <= 255; }));
+    setCountCmd->SetCallback(callback);
+    return setCountCmd;
 }
 
-inline CLI::App* AddStartCmd(CLI::App* app, const std::function<void()>& callback)
+inline Command* AddStartCmd(CommandGroup* root, const Callback& callback)
 {
-    auto* startCmd = app->add_subcommand("start", "Start the LED driver control loop");
-    startCmd->callback(callback);
-
+    Command* startCmd = root->AddCommand("start", "Start the LED driver control loop");
+    startCmd->SetCallback(callback);
     return startCmd;
 }
 
-inline CLI::App* AddStopCmd(CLI::App* app, const std::function<void()>& callback)
+inline Command* AddStopCmd(CommandGroup* root, const Callback& callback)
 {
-    auto* stopCmd = app->add_subcommand("stop", "Stop the LED driver control loop");
-    stopCmd->callback(callback);
-
+    Command* stopCmd = root->AddCommand("stop", "Stop the LED driver control loop");
+    stopCmd->SetCallback(callback);
     return stopCmd;
 }
 
-inline CLI::App* AddFillCmd(CLI::App* app, const std::function<void()>& callback, ColorRGB& color)
+inline Command* AddFillCmd(CommandGroup* root, const Callback& callback)
 {
-    const auto fillCmd = app->add_subcommand("fill", "Fill all LEDs with a solid color");
-
-    fillCmd->add_option("r", color.r, "Red component (0-255)")->required()->check(CLI::Range(0, 255));
-    fillCmd->add_option("g", color.g, "Green component (0-255)")->required()->check(CLI::Range(0, 255));
-    fillCmd->add_option("b", color.b, "Blue component (0-255)")->required()->check(CLI::Range(0, 255));
-    fillCmd->callback(callback);
+    Command* fillCmd = root->AddCommand("fill", "Fill all LEDs with a solid color");
+    fillCmd->AddOption<int>("red", "Red component (0-255)",
+                            std::function([](const int value) { return value >= 0 && value <= 255; }));
+    fillCmd->AddOption<int>("green", "Green component (0-255)",
+                            std::function([](const int value) { return value >= 0 && value <= 255; }));
+    fillCmd->AddOption<int>("blue", "Blue component (0-255)",
+                            std::function([](const int value) { return value >= 0 && value <= 255; }));
+    fillCmd->SetCallback(callback);
 
     return fillCmd;
 }

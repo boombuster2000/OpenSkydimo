@@ -1,157 +1,54 @@
-#include <cstring>
-
-#include <cerrno>
-#include <functional>
 #include <iostream>
-#include <sys/socket.h>
-#include <sys/un.h>
-#include <unistd.h>
 
-#include "CLI/CLI.hpp"
-#include "spdlog/fmt/bundled/format.h"
-
+#include "OpenSkydimoClient.h"
+#include "openskydimo/CommandDispatcher/CommandGroup.h"
 #include "openskydimo/commands.hpp"
 #include "openskydimo/config.h"
+#include "openskydimo/types/Response.h"
 
-bool SendCommand(const std::string& command)
+Response SendCommand(OpenSkydimoClient& client, const int argc, char* argv[])
 {
-    // RAII wrapper for socket file descriptor
-    struct SocketGuard
-    {
-        int fd;
-        explicit SocketGuard(const int fd_) : fd(fd_)
-        {
-        }
-
-        ~SocketGuard()
-        {
-            if (fd >= 0)
-                close(fd);
-        }
-
-        SocketGuard(const SocketGuard&) = delete;
-        SocketGuard& operator=(const SocketGuard&) = delete;
-        explicit operator int() const
-        {
-            return fd;
-        }
-    };
-
-    const SocketGuard sockFd(socket(AF_UNIX, SOCK_STREAM, 0));
-
-    if (static_cast<int>(sockFd) < 0)
-    {
-        std::cerr << "Failed to create socket" << std::endl;
-        return false;
-    }
-
-    sockaddr_un addr{};
-    addr.sun_family = AF_UNIX;
-    strncpy(addr.sun_path, s_socketPath.c_str(), sizeof(addr.sun_path) - 1);
-
-    if (connect(static_cast<int>(sockFd), reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) < 0)
-    {
-        std::cerr << "Failed to connect (is daemon running?)" << std::endl;
-        return false;
-    }
-
-    const std::string msg = command + "\n";
-    size_t totalWritten = 0;
-    const size_t msgLen = msg.length();
-
-    while (totalWritten < msgLen)
-    {
-        const ssize_t bytesWritten = write(static_cast<int>(sockFd), msg.c_str() + totalWritten, msgLen - totalWritten);
-
-        if (bytesWritten < 0)
-        {
-            std::cerr << "Write error: " << strerror(errno) << std::endl;
-            return false;
-        }
-
-        if (bytesWritten == 0)
-        {
-            std::cerr << "Write returned 0 (connection closed?)" << std::endl;
-            return false;
-        }
-
-        totalWritten += static_cast<size_t>(bytesWritten);
-    }
-
-    // Read response with loop to handle chunked data
-    std::string response;
-    char buffer[128];
-    bool receivedData = false;
-
-    while (true)
-    {
-        const ssize_t bytesRead = read(static_cast<int>(sockFd), buffer, sizeof(buffer) - 1);
-
-        if (bytesRead < 0)
-        {
-            std::cerr << "Read error: " << strerror(errno) << std::endl;
-            return false;
-        }
-
-        if (bytesRead == 0)
-            break; // EOF - server closed connection
-
-        receivedData = true;
-        buffer[bytesRead] = '\0';
-        response.append(buffer, static_cast<size_t>(bytesRead));
-
-        // If response contains newline, assume message is complete
-        if (response.find('\n') != std::string::npos)
-            break;
-    }
-
-    if (receivedData)
-    {
-        std::cout << "[SERVER] - " << response;
-        // Ensure output ends with newline if server didn't provide one
-        if (!response.empty() && response.back() != '\n')
-        {
-            std::cout << std::endl;
-        }
-    }
-
-    return true;
-}
-
-std::string JoinArgs(const int argc, char* argv[])
-{
-    std::string cmd;
-
-    for (int i = 1; i < argc; ++i)
-    {
-        cmd += argv[i];
-
-        if (i < argc - 1)
-            cmd += " ";
-    }
-
-    return cmd;
+    client.Connect();
+    client.SendCommand(argc, argv);
+    Response response = client.GetResponse();
+    client.Disconnect();
+    return response;
 }
 
 int main(const int argc, char* argv[])
 {
     using namespace openskydimo::commands;
-    CLI::App app{"This program is used to communicate with the skydimo daemon and configure the LEDs."};
-    argv = app.ensure_utf8(argv);
+    OpenSkydimoClient client(s_socketPath, 128);
 
-    const std::string cmd = JoinArgs(argc, argv);
+    CommandGroup rootCommandGroup("openskydimo", "Program to control skydimo lights on linux.");
 
-    Args cmdArgs;
+    AddFillCmd(&rootCommandGroup, [&](const Command&) { return SendCommand(client, argc, argv); });
 
-    AddFillCmd(&app, [&] { SendCommand(cmd); }, cmdArgs.fillColor);
+    CommandGroup* setCmd = AddSetCmd(&rootCommandGroup);
+    AddSetPortCmd(setCmd, [&](const Command&) { return SendCommand(client, argc, argv); });
 
-    const auto setCmd = AddSetCmd(&app);
-    AddSetPortCmd(setCmd, [&] { SendCommand(cmd); }, cmdArgs.serialPort);
-    AddSetCountCmd(setCmd, [&] { SendCommand(cmd); }, cmdArgs.ledCount);
+    AddSetCountCmd(setCmd, [&](const Command&) { return SendCommand(client, argc, argv); });
 
-    AddStartCmd(&app, [&] { SendCommand(cmd); });
-    AddStopCmd(&app, [&] { SendCommand(cmd); });
+    AddStartCmd(&rootCommandGroup, [&](const Command&) { return SendCommand(client, argc, argv); });
 
-    CLI11_PARSE(app, argc, argv);
+    AddStopCmd(&rootCommandGroup, [&](const Command&) { return SendCommand(client, argc, argv); });
+
+    try
+    {
+        auto [code, message] = rootCommandGroup.Execute(std::vector<std::string>(argv + 1, argv + argc));
+
+        if (!message.empty())
+        {
+            std::cout << message << '\n';
+        }
+
+        return code;
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << "error: " << e.what() << '\n';
+        return 1;
+    }
+
     return 0;
 }
