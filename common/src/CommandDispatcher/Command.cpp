@@ -16,6 +16,9 @@ Response Command::Execute(const std::vector<std::string> args)
     if ((args.empty() && !m_options.empty()) || (!args.empty() && args[0] == "help"))
         return PrintHelp();
 
+    if (args.size() > m_options.size())
+        return MakeError(1, std::format("too many arguments for command '{}': expected {}, got {}", GetName(),
+                                        m_options.size(), args.size()));
     for (size_t i = 0; i < m_options.size(); ++i)
     {
         if (i >= args.size())
