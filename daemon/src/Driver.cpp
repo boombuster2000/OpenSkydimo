@@ -26,6 +26,12 @@ void Driver::StopAndCleanup()
 
 Response Driver::SetRefreshRate(const int hz)
 {
+    if (m_isConnectionOpened)
+    {
+        logger->warn("Tried to set refresh rate whilst connection is opened.");
+        return MakeError(2, "connection must be closed first, run openskydimo stop");
+    }
+
     if (hz <= 0)
         return MakeError(1, "refresh rate must be > 0Hz");
 
