@@ -33,6 +33,9 @@ Response Command::Execute(const std::vector<std::string> args)
             return MakeError(1, std::format("invalid value for option '{}': {}", m_options[i].GetName(), e.what()));
         }
     }
+    if (!m_callback)
+        return MakeError(1, std::format("command '{}' has no callback set", GetName()));
+    
     return m_callback(*this);
 }
 
