@@ -15,12 +15,20 @@ CommandGroup::CommandGroup(const std::string& name, const std::string& descripti
 Command* CommandGroup::AddCommand(const std::string& name, const std::string& description)
 {
     auto [it, inserted] = m_subcommands.emplace(name, std::make_unique<Command>(name, description));
+
+    if (!inserted)
+        throw std::logic_error(std::format("Command '{}' already exists", name));
+
     return static_cast<Command*>(it->second.get());
 }
 
 CommandGroup* CommandGroup::AddCommandGroup(const std::string& name, const std::string& description)
 {
     auto [it, inserted] = m_subcommands.emplace(name, std::make_unique<CommandGroup>(name, description));
+
+    if (!inserted)
+        throw std::logic_error(std::format("CommandGroup '{}' already exists", name));
+
     return static_cast<CommandGroup*>(it->second.get());
 }
 
