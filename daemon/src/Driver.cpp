@@ -239,8 +239,6 @@ Response Driver::SetLedCount(const int ledCount)
         m_logger->warn("led-count set but failed to persist to config: {}", e.what());
     }
 
-    m_logger->info("Updated led-count in config file.");
-
     AddHeaderToBuffer();
     return MakeOk();
 }
