@@ -37,19 +37,7 @@ public:
     void Save() const
     {
         EnsureDirectoryExists();
-
-        std::fstream fileStream(m_filepath, std::ios::out);
-        if (!fileStream.is_open())
-            throw std::runtime_error("Failed to open config file for writing.");
-
-        try
-        {
-            fileStream << config.dump(4);
-        }
-        catch (const nlohmann::json::type_error& e)
-        {
-            throw std::runtime_error(std::format("Failed to serialize config: {}", e.what()));
-        }
+        WriteJsonAtomically(config);
     }
 
 private:
@@ -58,16 +46,40 @@ private:
         std::filesystem::create_directories(m_filepath.parent_path());
     }
 
+    void WriteJsonAtomically(const nlohmann::json& data) const
+    {
+        const std::filesystem::path tempPath = m_filepath.string() + ".tmp";
+
+        {
+            std::ofstream fileStream(tempPath, std::ios::out | std::ios::trunc);
+            if (!fileStream.is_open())
+                throw std::runtime_error("Failed to open temp config file for writing.");
+
+            try
+            {
+                fileStream << data.dump(4);
+            }
+            catch (const nlohmann::json::type_error& e)
+            {
+                throw std::runtime_error(std::format("Failed to serialize config: {}", e.what()));
+            }
+
+            fileStream.flush();
+            if (fileStream.fail())
+                throw std::runtime_error("Failed to write temp config file (disk full?).");
+        }
+
+        std::error_code ec;
+        std::filesystem::rename(tempPath, m_filepath, ec);
+        if (ec)
+            throw std::runtime_error(std::format("Failed to replace config file: {}", ec.message()));
+    }
+
     void InitConfig() const
     {
         EnsureDirectoryExists();
-
-        std::fstream fileStream(m_filepath, std::ios::out);
-        if (!fileStream.is_open())
-            throw std::runtime_error("Failed to create and open config file.");
-
-        const nlohmann::json defaultConfig = {{"port", ""}, {"led-count", 0}, {"last-effect", nullptr}};
-        fileStream << defaultConfig.dump(4);
+        const nlohmann::json defaultConfig = {{"port", ""}, {"ledCount", 0}, {"lastEffect", nullptr}};
+        WriteJsonAtomically(defaultConfig);
     }
 
 private:
