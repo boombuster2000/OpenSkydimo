@@ -34,7 +34,7 @@ void Driver::LoadConfigAndStart()
         m_logger->error("Config file contains invalid port value: {}", e.what());
         return;
     }
-    
+
     try
     {
         ledCount = m_configHandler.config.value("led-count", 0);
@@ -51,7 +51,10 @@ void Driver::LoadConfigAndStart()
         return;
     }
     if (auto [code, message] = SetSerialPort(port); code != 0)
+    {
         m_logger->error("{}", message);
+        return;
+    }
 
     if (ledCount <= 0)
     {
