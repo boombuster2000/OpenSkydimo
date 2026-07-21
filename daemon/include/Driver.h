@@ -25,10 +25,6 @@ public:
         FILL
     };
 
-    NLOHMANN_JSON_SERIALIZE_ENUM(Effect, {
-                                             {Effect::FILL, "fill"},
-                                         })
-
 public:
     Driver() = default;
     ~Driver();
@@ -93,3 +89,26 @@ public:
     {
     }
 };
+
+inline void to_json(nlohmann::json& j, const Driver::Effect effect)
+{
+    switch (effect)
+    {
+    case Driver::Effect::FILL:
+        j = "fill";
+        return;
+    default:
+        throw std::invalid_argument("Unhandled Effect value in to_json");
+    }
+}
+
+inline void from_json(const nlohmann::json& j, Driver::Effect& effect)
+{
+    const std::string value = j.get<std::string>();
+    if (value == "fill")
+    {
+        effect = Driver::Effect::FILL;
+        return;
+    }
+    throw nlohmann::json::type_error::create(302, std::format("Unrecognized effect type: '{}'", value), &j);
+}
