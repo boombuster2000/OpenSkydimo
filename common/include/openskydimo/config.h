@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdlib>
 #include <filesystem>
+#include <stdexcept>
 #include <string>
 
 static const std::string s_socketPath = "/tmp/openskydimo.sock";
