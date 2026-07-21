@@ -10,6 +10,64 @@ Driver::~Driver()
     StopAndCleanup();
 }
 
+Response Driver::LoadConfig()
+{
+    try
+    {
+        m_configHandler.Load();
+    }
+    catch (const std::runtime_error& e)
+    {
+        m_logger->error("Failed to load config: {}", e.what());
+        return MakeError(2, std::format("Failed to load config: {}", e.what()));
+    }
+
+    return MakeOk();
+}
+
+Response Driver::ApplyEffect(const Effect effect, const nlohmann::json& params)
+{
+    Response result;
+
+    switch (effect)
+    {
+    case Effect::FILL: {
+        try
+        {
+            result = Fill(params.get<ColorRGB>());
+        }
+        catch (const nlohmann::json::exception& e)
+        {
+            m_logger->warn("Invalid parameters for FILL effect: {}", e.what());
+            return MakeWarning(2, "Invalid effect parameters.");
+        }
+
+        break;
+    }
+    default:
+        m_logger->warn("Received unknown effect.");
+        return MakeWarning(2, "Received unknown effect.");
+    }
+
+    if (result.code == 0)
+    {
+        m_configHandler.config["lastEffect"] = {{"type", effect}, {"params", params}};
+
+        try
+        {
+            m_configHandler.Save();
+            m_logger->info("Updated last effect in config file.");
+        }
+        catch (const std::runtime_error& e)
+        {
+            m_logger->warn("Effect applied but failed to persist to config: {}", e.what());
+            return MakeWarning(2, "Effect applied but failed to persist to config.");
+        }
+    }
+
+    return result;
+}
+
 void Driver::StopAndCleanup()
 {
     m_isConnectionOpened = false;
@@ -59,6 +117,9 @@ Response Driver::SetSerialPort(const std::string& portName)
 
     m_logger->info("Setting serial port to '{}'", portName);
     m_portName = portName;
+    m_configHandler.config["port"] = portName;
+    m_configHandler.Save();
+    m_logger->info("Updated port in config file.");
 
     return MakeOk();
 }
@@ -86,6 +147,10 @@ Response Driver::SetLedCount(const int ledCount)
 
     m_logger->info("Setting LED count to {}", ledCount);
     m_ledCount = ledCount;
+    m_configHandler.config["ledCount"] = ledCount;
+    m_configHandler.Save();
+    m_logger->info("Updated ledCount in config file.");
+
     AddHeaderToBuffer();
     return MakeOk();
 }
@@ -175,7 +240,7 @@ Response Driver::OpenSerialConnection()
     }
 
     m_logger->info("Serial connection established on '{}' at {} baud, ready to send to {} LEDs", m_portName, m_baudRate,
-                 m_ledCount);
+                   m_ledCount);
 
     m_isConnectionOpened = true;
     m_sendThread = std::thread(&Driver::SendLoop, this);
@@ -277,7 +342,7 @@ void Driver::AddHeaderToBuffer()
 {
     const size_t bufferSize = m_headerSize + (m_ledCount * 3);
     m_logger->debug("Resizing buffer to {} bytes ({} header + {} LEDs x 3 channels)", bufferSize, m_headerSize,
-                  m_ledCount);
+                    m_ledCount);
 
     m_buffer.resize(bufferSize);
     m_buffer[0] = static_cast<std::byte>('A');

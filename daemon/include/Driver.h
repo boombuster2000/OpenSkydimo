@@ -1,4 +1,6 @@
 #pragma once
+#include "ConfigFileHandler.h"
+
 #include <atomic>
 #include <chrono>
 #include <mutex>
@@ -17,8 +19,21 @@
 class Driver
 {
 public:
+    enum class Effect
+    {
+        FILL
+    };
+
+    NLOHMANN_JSON_SERIALIZE_ENUM(Effect, {
+                                             {Effect::FILL, "fill"},
+                                         })
+
+public:
     Driver() = default;
     ~Driver();
+
+    Response LoadConfig();
+    Response ApplyEffect(Effect effect, const nlohmann::json& params);
 
     Response SetSerialPort(const std::string& portName);
     Response SetBaudRate(int baudRate);
@@ -28,8 +43,6 @@ public:
     Response OpenSerialConnection();
     Response CloseSerialConnection();
 
-    Response Fill(ColorRGB color);
-
 private:
     void StopAndCleanup();
     std::optional<Response> RequireStopped(const char* action) const;
@@ -37,8 +50,11 @@ private:
     void SendLoop();
     void AddHeaderToBuffer();
 
+    Response Fill(ColorRGB color);
+
 private:
     std::shared_ptr<spdlog::logger> m_logger = spdlog::stdout_color_mt("Driver");
+    ConfigFileHandler m_configHandler = ConfigFileHandler("/tmp/openskydimo/config.json");
 
     static constexpr int m_headerSize = 6;
 
