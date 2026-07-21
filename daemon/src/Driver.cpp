@@ -23,7 +23,7 @@ void Driver::LoadConfigAndStart()
     }
 
     const std::string port = m_configHandler.config.value("port", "");
-    const int ledCount = m_configHandler.config.value("ledCount", 0);
+    const int ledCount = m_configHandler.config.value("led-count", 0);
 
     if (port.empty())
     {
@@ -51,13 +51,13 @@ void Driver::LoadConfigAndStart()
         return;
     }
 
-    if (!m_configHandler.config.contains("lastEffect") || m_configHandler.config["lastEffect"].is_null())
+    if (!m_configHandler.config.contains("last-effect") || m_configHandler.config["last-effect"].is_null())
     {
         m_logger->info("No previous effect to restore.");
         return;
     }
 
-    const auto& lastEffect = m_configHandler.config["lastEffect"];
+    const auto& lastEffect = m_configHandler.config["last-effect"];
     try
     {
         const Effect type = lastEffect.at("type").get<Effect>();

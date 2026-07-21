@@ -66,7 +66,7 @@ private:
         if (!fileStream.is_open())
             throw std::runtime_error("Failed to create and open config file.");
 
-        const nlohmann::json defaultConfig = {{"port", ""}, {"ledCount", 0}, {"lastEffect", nullptr}};
+        const nlohmann::json defaultConfig = {{"port", ""}, {"led-count", 0}, {"last-effect", nullptr}};
         fileStream << defaultConfig.dump(4);
     }
 
