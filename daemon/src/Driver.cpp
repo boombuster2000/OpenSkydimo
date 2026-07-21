@@ -201,8 +201,6 @@ Response Driver::SetSerialPort(const std::string& portName)
         m_logger->warn("Port set but failed to persist to config: {}", e.what());
     }
 
-    m_logger->info("Updated port in config file.");
-
     return MakeOk();
 }
 
