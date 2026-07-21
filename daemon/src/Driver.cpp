@@ -22,8 +22,28 @@ void Driver::LoadConfigAndStart()
         return;
     }
 
-    const std::string port = m_configHandler.config.value("port", "");
-    const int ledCount = m_configHandler.config.value("led-count", 0);
+    std::string port;
+    int ledCount = 0;
+
+    try
+    {
+        port = m_configHandler.config.value("port", "");
+    }
+    catch (const nlohmann::json::exception& e)
+    {
+        m_logger->error("Config file contains invalid port value: {}", e.what());
+        return;
+    }
+    
+    try
+    {
+        ledCount = m_configHandler.config.value("led-count", 0);
+    }
+    catch (const nlohmann::json::exception& e)
+    {
+        m_logger->error("Config file contains invalid led-count value: {}", e.what());
+        return;
+    }
 
     if (port.empty())
     {
