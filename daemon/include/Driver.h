@@ -13,6 +13,7 @@
 #include "spdlog/sinks/stdout_color_sinks.h"
 #include "spdlog/spdlog.h"
 
+#include "openskydimo/config.h"
 #include "openskydimo/types/ColorRGB.h"
 #include "openskydimo/types/Response.h"
 
@@ -54,7 +55,7 @@ private:
 
 private:
     std::shared_ptr<spdlog::logger> m_logger = spdlog::stdout_color_mt("Driver");
-    ConfigFileHandler m_configHandler = ConfigFileHandler("/tmp/openskydimo/config.json");
+    ConfigFileHandler m_configHandler = ConfigFileHandler(GetConfigPath());
 
     static constexpr int m_headerSize = 6;
 
