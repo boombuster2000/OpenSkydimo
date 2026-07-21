@@ -8,11 +8,11 @@ static const std::string s_socketPath = "/tmp/openskydimo.sock";
 
 inline std::filesystem::path GetConfigPath()
 {
-    if (const char* xdgConfigHome = std::getenv("XDG_CONFIG_HOME"))
+    if (const char* xdgConfigHome = std::getenv("XDG_CONFIG_HOME"); xdgConfigHome && *xdgConfigHome)
         return std::filesystem::path(xdgConfigHome) / "openskydimo" / "config.json";
 
     const char* home = std::getenv("HOME");
-    if (!home)
+    if (!home || !*home)
         throw std::runtime_error("Neither XDG_CONFIG_HOME nor HOME is set");
 
     return std::filesystem::path(home) / ".config" / "openskydimo" / "config.json";
