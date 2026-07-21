@@ -10,7 +10,7 @@ Driver::~Driver()
     StopAndCleanup();
 }
 
-Response Driver::LoadConfig()
+void Driver::LoadConfigAndStart()
 {
     try
     {
@@ -19,13 +19,59 @@ Response Driver::LoadConfig()
     catch (const std::runtime_error& e)
     {
         m_logger->error("Failed to load config: {}", e.what());
-        return MakeError(2, std::format("Failed to load config: {}", e.what()));
+        return;
     }
 
-    return MakeOk();
+    const std::string port = m_configHandler.config.value("port", "");
+    const int ledCount = m_configHandler.config.value("ledCount", 0);
+
+    if (port.empty())
+    {
+        m_logger->info("No port configured yet; skipping auto-connect.");
+        return;
+    }
+    if (auto [code, message] = SetSerialPort(port); code != 0)
+        m_logger->error("{}", message);
+
+    if (ledCount <= 0)
+    {
+        m_logger->info("No LED count configured yet; skipping auto-connect.");
+        return;
+    }
+
+    if (auto [code, message] = SetLedCount(ledCount); code != 0)
+    {
+        m_logger->error("{}", message);
+        return;
+    }
+
+    if (auto [code, message] = OpenSerialConnection(); code != 0)
+    {
+        m_logger->error("{}", message);
+        return;
+    }
+
+    if (!m_configHandler.config.contains("lastEffect") || m_configHandler.config["lastEffect"].is_null())
+    {
+        m_logger->info("No previous effect to restore.");
+        return;
+    }
+
+    const auto& lastEffect = m_configHandler.config["lastEffect"];
+    try
+    {
+        const Effect type = lastEffect.at("type").get<Effect>();
+        const auto params = lastEffect.value("params", nlohmann::json{});
+        if (auto [applyCode, applyMessage] = ApplyEffect(type, params, false); applyCode != 0)
+            m_logger->warn("Failed to restore last effect on startup: {}", applyMessage);
+    }
+    catch (const nlohmann::json::exception& e)
+    {
+        m_logger->warn("Skipping malformed lastEffect on startup: {}", e.what());
+    }
 }
 
-Response Driver::ApplyEffect(const Effect effect, const nlohmann::json& params)
+Response Driver::ApplyEffect(const Effect effect, const nlohmann::json& params, const bool saveToFile)
 {
     Response result;
 
@@ -55,8 +101,11 @@ Response Driver::ApplyEffect(const Effect effect, const nlohmann::json& params)
 
         try
         {
-            m_configHandler.Save();
-            m_logger->info("Updated last effect in config file.");
+            if (saveToFile)
+            {
+                m_configHandler.Save();
+                m_logger->info("Updated last effect in config file.");
+            }
         }
         catch (const std::runtime_error& e)
         {
@@ -118,7 +167,17 @@ Response Driver::SetSerialPort(const std::string& portName)
     m_logger->info("Setting serial port to '{}'", portName);
     m_portName = portName;
     m_configHandler.config["port"] = portName;
-    m_configHandler.Save();
+
+    try
+    {
+        m_configHandler.Save();
+        m_logger->info("Updated port in config file.");
+    }
+    catch (const std::runtime_error& e)
+    {
+        m_logger->warn("Port set but failed to persist to config: {}", e.what());
+    }
+
     m_logger->info("Updated port in config file.");
 
     return MakeOk();
@@ -148,7 +207,17 @@ Response Driver::SetLedCount(const int ledCount)
     m_logger->info("Setting LED count to {}", ledCount);
     m_ledCount = ledCount;
     m_configHandler.config["ledCount"] = ledCount;
-    m_configHandler.Save();
+
+    try
+    {
+        m_configHandler.Save();
+        m_logger->info("Updated ledCount in config file.");
+    }
+    catch (const std::runtime_error& e)
+    {
+        m_logger->warn("ledCount set but failed to persist to config: {}", e.what());
+    }
+
     m_logger->info("Updated ledCount in config file.");
 
     AddHeaderToBuffer();

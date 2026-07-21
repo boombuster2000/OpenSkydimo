@@ -32,8 +32,8 @@ public:
     Driver() = default;
     ~Driver();
 
-    Response LoadConfig();
-    Response ApplyEffect(Effect effect, const nlohmann::json& params);
+    void LoadConfigAndStart();
+    Response ApplyEffect(Effect effect, const nlohmann::json& params, bool saveToFile = true);
 
     Response SetSerialPort(const std::string& portName);
     Response SetBaudRate(int baudRate);

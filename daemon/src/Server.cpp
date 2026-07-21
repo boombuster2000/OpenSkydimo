@@ -42,7 +42,7 @@ Server::Server(std::string socketPath, const int backlogSize, const int bufferSi
     // --- stop ---
     AddStopCmd(&m_rootCommandGroup, [this](const Command&) { return m_driver.CloseSerialConnection(); });
 
-    m_driver.LoadConfig();
+    m_driver.LoadConfigAndStart();
 }
 
 void Server::OnMessageReceived(const int clientFd, const std::string& message)
