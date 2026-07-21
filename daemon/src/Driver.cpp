@@ -97,7 +97,7 @@ Response Driver::ApplyEffect(const Effect effect, const nlohmann::json& params, 
 
     if (result.code == 0)
     {
-        m_configHandler.config["lastEffect"] = {{"type", effect}, {"params", params}};
+        m_configHandler.config["last-effect"] = {{"type", effect}, {"params", params}};
 
         try
         {
@@ -206,19 +206,19 @@ Response Driver::SetLedCount(const int ledCount)
 
     m_logger->info("Setting LED count to {}", ledCount);
     m_ledCount = ledCount;
-    m_configHandler.config["ledCount"] = ledCount;
+    m_configHandler.config["led-count"] = ledCount;
 
     try
     {
         m_configHandler.Save();
-        m_logger->info("Updated ledCount in config file.");
+        m_logger->info("Updated led-count in config file.");
     }
     catch (const std::runtime_error& e)
     {
-        m_logger->warn("ledCount set but failed to persist to config: {}", e.what());
+        m_logger->warn("led-count set but failed to persist to config: {}", e.what());
     }
 
-    m_logger->info("Updated ledCount in config file.");
+    m_logger->info("Updated led-count in config file.");
 
     AddHeaderToBuffer();
     return MakeOk();
