@@ -5,6 +5,7 @@ add_executable(openskydimo-daemon
         include/Server.h
         src/Server.cpp
         include/ConfigFileHandler.h
+        src/ConfigFileHandler.cpp
 )
 
 target_include_directories(openskydimo-daemon PRIVATE include)
