@@ -1,4 +1,6 @@
 #pragma once
+#include "ConfigFileHandler.h"
+
 #include <atomic>
 #include <chrono>
 #include <mutex>
@@ -11,14 +13,24 @@
 #include "spdlog/sinks/stdout_color_sinks.h"
 #include "spdlog/spdlog.h"
 
+#include "openskydimo/config.h"
 #include "openskydimo/types/ColorRGB.h"
 #include "openskydimo/types/Response.h"
 
 class Driver
 {
 public:
-    Driver() = default;
+    enum class Effect
+    {
+        FILL
+    };
+
+public:
+    Driver();
     ~Driver();
+
+    void LoadConfigAndStart();
+    Response ApplyEffect(Effect effect, const nlohmann::json& params, bool saveToFile = true);
 
     Response SetSerialPort(const std::string& portName);
     Response SetBaudRate(int baudRate);
@@ -28,8 +40,6 @@ public:
     Response OpenSerialConnection();
     Response CloseSerialConnection();
 
-    Response Fill(ColorRGB color);
-
 private:
     void StopAndCleanup();
     std::optional<Response> RequireStopped(const char* action) const;
@@ -37,8 +47,12 @@ private:
     void SendLoop();
     void AddHeaderToBuffer();
 
+    Response Fill(ColorRGB color);
+
 private:
-    std::shared_ptr<spdlog::logger> logger = spdlog::stdout_color_mt("Driver");
+    std::shared_ptr<spdlog::logger> m_logger = spdlog::stdout_color_mt("Driver");
+    std::optional<ConfigFileHandler> m_configHandler;
+    nlohmann::json m_defaultConfig = {{"port", ""}, {"led-count", 0}, {"last-effect", nullptr}};
 
     static constexpr int m_headerSize = 6;
 
@@ -76,3 +90,26 @@ public:
     {
     }
 };
+
+inline void to_json(nlohmann::json& j, const Driver::Effect effect)
+{
+    switch (effect)
+    {
+    case Driver::Effect::FILL:
+        j = "fill";
+        return;
+    default:
+        throw std::invalid_argument("Unhandled Effect value in to_json");
+    }
+}
+
+inline void from_json(const nlohmann::json& j, Driver::Effect& effect)
+{
+    const std::string value = j.get<std::string>();
+    if (value == "fill")
+    {
+        effect = Driver::Effect::FILL;
+        return;
+    }
+    throw nlohmann::json::type_error::create(302, std::format("Unrecognized effect type: '{}'", value), &j);
+}

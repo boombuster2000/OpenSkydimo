@@ -5,9 +5,155 @@
 #include <termios.h>
 #include <unistd.h>
 
+Driver::Driver()
+{
+    try
+    {
+        m_configHandler.emplace(GetConfigPath(), m_defaultConfig);
+    }
+    catch (const std::runtime_error& e)
+    {
+        m_logger->error("Config unavailable, running without persistence: {}", e.what());
+    }
+}
+
 Driver::~Driver()
 {
     StopAndCleanup();
+}
+
+void Driver::LoadConfigAndStart()
+{
+    if (!m_configHandler)
+        return;
+
+    nlohmann::json& config = m_configHandler->config;
+
+    try
+    {
+        m_configHandler->Load();
+    }
+    catch (const std::runtime_error& e)
+    {
+        m_logger->error("Failed to load config: {}", e.what());
+        return;
+    }
+
+    std::string port;
+    int ledCount = 0;
+
+    try
+    {
+        port = config.value("port", "");
+    }
+    catch (const nlohmann::json::exception& e)
+    {
+        m_logger->error("Config file contains invalid port value: {}", e.what());
+        return;
+    }
+
+    try
+    {
+        ledCount = config.value("led-count", 0);
+    }
+    catch (const nlohmann::json::exception& e)
+    {
+        m_logger->error("Config file contains invalid led-count value: {}", e.what());
+        return;
+    }
+
+    if (port.empty())
+    {
+        m_logger->info("No port configured yet; skipping auto-connect.");
+        return;
+    }
+    if (auto [code, message] = SetSerialPort(port); code != 0)
+    {
+        m_logger->error("{}", message);
+        return;
+    }
+
+    if (ledCount <= 0)
+    {
+        m_logger->info("No LED count configured yet; skipping auto-connect.");
+        return;
+    }
+
+    if (auto [code, message] = SetLedCount(ledCount); code != 0)
+    {
+        m_logger->error("{}", message);
+        return;
+    }
+
+    if (auto [code, message] = OpenSerialConnection(); code != 0)
+    {
+        m_logger->error("{}", message);
+        return;
+    }
+
+    if (!config.contains("last-effect") || config["last-effect"].is_null())
+    {
+        m_logger->info("No previous effect to restore.");
+        return;
+    }
+
+    const auto& lastEffect = config["last-effect"];
+    try
+    {
+        const Effect type = lastEffect.at("type").get<Effect>();
+        const auto params = lastEffect.value("params", nlohmann::json{});
+        if (auto [applyCode, applyMessage] = ApplyEffect(type, params, false); applyCode != 0)
+            m_logger->warn("Failed to restore last effect on startup: {}", applyMessage);
+    }
+    catch (const nlohmann::json::exception& e)
+    {
+        m_logger->warn("Skipping malformed lastEffect on startup: {}", e.what());
+    }
+}
+
+Response Driver::ApplyEffect(const Effect effect, const nlohmann::json& params, const bool saveToFile)
+{
+    Response result;
+
+    switch (effect)
+    {
+    case Effect::FILL: {
+        try
+        {
+            result = Fill(params.get<ColorRGB>());
+        }
+        catch (const nlohmann::json::exception& e)
+        {
+            m_logger->warn("Invalid parameters for FILL effect: {}", e.what());
+            return MakeWarning(2, "Invalid effect parameters.");
+        }
+
+        break;
+    }
+    default:
+        m_logger->warn("Received unknown effect.");
+        return MakeWarning(2, "Received unknown effect.");
+    }
+
+    if (!(result.code == 0 && m_configHandler))
+        return result;
+
+    m_configHandler->config["last-effect"] = {{"type", effect}, {"params", params}};
+    try
+    {
+        if (saveToFile)
+        {
+            m_configHandler->Save();
+            m_logger->info("Updated last effect in config file.");
+        }
+    }
+    catch (const std::runtime_error& e)
+    {
+        m_logger->warn("Effect applied but failed to persist to config: {}", e.what());
+        return MakeWarning(2, "Effect applied but failed to persist to config.");
+    }
+
+    return result;
 }
 
 void Driver::StopAndCleanup()
@@ -28,7 +174,7 @@ std::optional<Response> Driver::RequireStopped(const char* action) const
 {
     if (m_isConnectionOpened)
     {
-        logger->warn("Tried to {} whilst connection is opened.", action);
+        m_logger->warn("Tried to {} whilst connection is opened.", action);
         return MakeWarning(2, "connection must be closed first, run openskydimo stop");
     }
 
@@ -46,7 +192,7 @@ Response Driver::SetRefreshRate(const int hz)
     if (hz >= 1'000'000)
         return MakeError(1, "refresh rate must be less than 1,000,000Hz.");
 
-    logger->info("Setting refresh rate to {} Hz", hz);
+    m_logger->info("Setting refresh rate to {} Hz", hz);
     m_sendInterval = std::chrono::microseconds(1'000'000 / hz);
 
     return MakeOk();
@@ -57,8 +203,22 @@ Response Driver::SetSerialPort(const std::string& portName)
     if (auto response = RequireStopped("set serial port"))
         return *response;
 
-    logger->info("Setting serial port to '{}'", portName);
+    m_logger->info("Setting serial port to '{}'", portName);
     m_portName = portName;
+
+    if (!m_configHandler)
+        return MakeOk();
+
+    m_configHandler->config["port"] = portName;
+    try
+    {
+        m_configHandler->Save();
+        m_logger->info("Updated port in config file.");
+    }
+    catch (const std::runtime_error& e)
+    {
+        m_logger->warn("Port set but failed to persist to config: {}", e.what());
+    }
 
     return MakeOk();
 }
@@ -68,7 +228,7 @@ Response Driver::SetBaudRate(const int baudRate)
     if (auto response = RequireStopped("set baud rate"))
         return *response;
 
-    logger->info("Setting baud rate to {}", baudRate);
+    m_logger->info("Setting baud rate to {}", baudRate);
     m_baudRate = baudRate;
     return MakeOk();
 }
@@ -80,13 +240,29 @@ Response Driver::SetLedCount(const int ledCount)
 
     if (ledCount < 0 || ledCount > 1024)
     {
-        logger->warn("Tried to set LED count to {}", ledCount);
+        m_logger->warn("Tried to set LED count to {}", ledCount);
         return MakeError(1, std::format("LED count must be between 0 and 1024, got {}", ledCount));
     }
 
-    logger->info("Setting LED count to {}", ledCount);
+    m_logger->info("Setting LED count to {}", ledCount);
     m_ledCount = ledCount;
     AddHeaderToBuffer();
+
+    if (!m_configHandler)
+        return MakeOk();
+
+    m_configHandler->config["led-count"] = ledCount;
+
+    try
+    {
+        m_configHandler->Save();
+        m_logger->info("Updated led-count in config file.");
+    }
+    catch (const std::runtime_error& e)
+    {
+        m_logger->warn("led-count set but failed to persist to config: {}", e.what());
+    }
+
     return MakeOk();
 }
 
@@ -97,7 +273,7 @@ Response Driver::OpenSerialConnection()
 
     StopAndCleanup();
 
-    logger->info("Opening serial connection on port '{}'", m_portName);
+    m_logger->info("Opening serial connection on port '{}'", m_portName);
 
     if (m_portName.empty())
         return MakeError(1, "no serial port set", "openskydimo set port <path>");
@@ -109,7 +285,7 @@ Response Driver::OpenSerialConnection()
     if (m_serialPort < 0)
         return MakeError(1, std::format("unable to open serial port '{}'", m_portName));
 
-    logger->debug("Serial port '{}' opened, configuring tty attributes", m_portName);
+    m_logger->debug("Serial port '{}' opened, configuring tty attributes", m_portName);
 
     termios tty{};
     if (tcgetattr(m_serialPort, &tty) != 0)
@@ -165,7 +341,7 @@ Response Driver::OpenSerialConnection()
 
     cfsetispeed(&tty, baudRate);
     cfsetospeed(&tty, baudRate);
-    logger->debug("Baud rate set to {}", m_baudRate);
+    m_logger->debug("Baud rate set to {}", m_baudRate);
 
     if (tcsetattr(m_serialPort, TCSANOW, &tty) != 0)
     {
@@ -174,12 +350,12 @@ Response Driver::OpenSerialConnection()
         return MakeError(1, "unable to get tty attributes");
     }
 
-    logger->info("Serial connection established on '{}' at {} baud, ready to send to {} LEDs", m_portName, m_baudRate,
-                 m_ledCount);
+    m_logger->info("Serial connection established on '{}' at {} baud, ready to send to {} LEDs", m_portName, m_baudRate,
+                   m_ledCount);
 
     m_isConnectionOpened = true;
     m_sendThread = std::thread(&Driver::SendLoop, this);
-    logger->info("Send thread started at ~{} Hz", 1'000'000 / m_sendInterval.count());
+    m_logger->info("Send thread started at ~{} Hz", 1'000'000 / m_sendInterval.count());
 
     return MakeOk();
 }
@@ -188,13 +364,13 @@ Response Driver::CloseSerialConnection()
 {
     if (m_serialPort < 0)
     {
-        logger->warn("CloseSerialConnection called but no connection is open");
+        m_logger->warn("CloseSerialConnection called but no connection is open");
         return MakeWarning(2, "no serial connection is open to close");
     }
 
-    logger->info("Closing serial connection on '{}'", m_portName);
+    m_logger->info("Closing serial connection on '{}'", m_portName);
     StopAndCleanup();
-    logger->info("Serial connection closed");
+    m_logger->info("Serial connection closed");
 
     return MakeOk();
 }
@@ -214,7 +390,7 @@ void Driver::SendLoop()
         }
         catch (const SerialWriteException& e)
         {
-            logger->error("Send loop write error: {}", e.what());
+            m_logger->error("Send loop write error: {}", e.what());
             m_isConnectionOpened = false; // Stop rather than spam errors
             break;
         }
@@ -225,7 +401,7 @@ void Driver::SendLoop()
 
 void Driver::SendColors() const
 {
-    logger->debug("Sending {} bytes to '{}'", m_buffer.size(), m_portName);
+    m_logger->debug("Sending {} bytes to '{}'", m_buffer.size(), m_portName);
 
     size_t totalWritten = 0;
     const auto* data = reinterpret_cast<const char*>(m_buffer.data());
@@ -249,7 +425,7 @@ void Driver::SendColors() const
         totalWritten += static_cast<size_t>(bytesWritten);
     }
 
-    logger->debug("Sent {} bytes successfully", totalWritten);
+    m_logger->debug("Sent {} bytes successfully", totalWritten);
 }
 
 Response Driver::Fill(const ColorRGB color)
@@ -257,7 +433,7 @@ Response Driver::Fill(const ColorRGB color)
     if (!m_isConnectionOpened)
         return MakeError(1, "driver not started", "openskydimo start");
 
-    logger->info("Filling {} LEDs with RGB({}, {}, {})", m_ledCount, color.r, color.g, color.b);
+    m_logger->info("Filling {} LEDs with RGB{}", m_ledCount, color);
 
     {
         std::lock_guard lock(m_bufferMutex);
@@ -270,14 +446,14 @@ Response Driver::Fill(const ColorRGB color)
         }
     }
 
-    logger->debug("Buffer updated with new fill colour");
+    m_logger->debug("Buffer updated with new fill colour");
     return MakeOk();
 }
 void Driver::AddHeaderToBuffer()
 {
     const size_t bufferSize = m_headerSize + (m_ledCount * 3);
-    logger->debug("Resizing buffer to {} bytes ({} header + {} LEDs x 3 channels)", bufferSize, m_headerSize,
-                  m_ledCount);
+    m_logger->debug("Resizing buffer to {} bytes ({} header + {} LEDs x 3 channels)", bufferSize, m_headerSize,
+                    m_ledCount);
 
     m_buffer.resize(bufferSize);
     m_buffer[0] = static_cast<std::byte>('A');

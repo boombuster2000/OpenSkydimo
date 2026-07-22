@@ -4,6 +4,7 @@
 #include <cstddef>
 
 #include "spdlog/fmt/fmt.h"
+#include <nlohmann/json.hpp>
 
 struct ColorRGB
 {
@@ -23,6 +24,18 @@ struct ColorRGB
     {
     }
 };
+
+inline void to_json(nlohmann::json& j, const ColorRGB& color)
+{
+    j = nlohmann::json{{"r", std::to_integer<int>(color.r)},
+                       {"g", std::to_integer<int>(color.g)},
+                       {"b", std::to_integer<int>(color.b)}};
+}
+
+inline void from_json(const nlohmann::json& j, ColorRGB& color)
+{
+    color = ColorRGB(j.at("r").get<int>(), j.at("g").get<int>(), j.at("b").get<int>());
+}
 
 template <>
 struct fmt::formatter<ColorRGB> : formatter<std::string>

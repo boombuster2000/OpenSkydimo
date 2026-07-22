@@ -1,5 +1,7 @@
 #include "Server.h"
 
+#include "Driver.h"
+
 #include <algorithm>
 #include <format>
 #include <utility>
@@ -19,7 +21,7 @@ Server::Server(std::string socketPath, const int backlogSize, const int bufferSi
     AddFillCmd(&m_rootCommandGroup, [this](const Command& cmd) {
         const ColorRGB fillColor = {(cmd.GetOption<int>("red")), (cmd.GetOption<int>("green")),
                                     (cmd.GetOption<int>("blue"))};
-        return m_driver.Fill(fillColor);
+        return m_driver.ApplyEffect(Driver::Effect::FILL, fillColor);
     });
 
     // --- set (command group) ---
@@ -39,6 +41,8 @@ Server::Server(std::string socketPath, const int backlogSize, const int bufferSi
 
     // --- stop ---
     AddStopCmd(&m_rootCommandGroup, [this](const Command&) { return m_driver.CloseSerialConnection(); });
+
+    m_driver.LoadConfigAndStart();
 }
 
 void Server::OnMessageReceived(const int clientFd, const std::string& message)
