@@ -10,3 +10,5 @@ add_executable(openskydimo-daemon
 
 target_include_directories(openskydimo-daemon PRIVATE include)
 target_link_libraries(openskydimo-daemon PRIVATE openskydimo-common)
+
+install(TARGETS openskydimo-daemon RUNTIME DESTINATION bin)
