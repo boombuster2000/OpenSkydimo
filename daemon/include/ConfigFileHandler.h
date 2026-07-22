@@ -78,7 +78,7 @@ private:
     void InitConfig() const
     {
         EnsureDirectoryExists();
-        const nlohmann::json defaultConfig = {{"port", ""}, {"ledCount", 0}, {"lastEffect", nullptr}};
+        const nlohmann::json defaultConfig = {{"port", ""}, {"led-count", 0}, {"last-effect", nullptr}};
         WriteJsonAtomically(defaultConfig);
     }
 
