@@ -10,7 +10,8 @@ public:
     nlohmann::json config;
 
 public:
-    explicit ConfigFileHandler(const std::string& filepath);
+    explicit ConfigFileHandler(const std::string& filepath,
+                               const nlohmann::json& defaultConfig = nlohmann::json::object());
 
     void Load();
     void Save() const;
@@ -18,8 +19,9 @@ public:
 private:
     void EnsureDirectoryExists() const;
     void WriteJsonAtomically(const nlohmann::json& data) const;
-    void InitConfig() const;
+    void InitConfig();
 
 private:
     std::filesystem::path m_filepath;
+    nlohmann::json m_defaultConfig;
 };

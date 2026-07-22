@@ -26,7 +26,7 @@ public:
     };
 
 public:
-    Driver() = default;
+    Driver();
     ~Driver();
 
     void LoadConfigAndStart();
@@ -51,7 +51,8 @@ private:
 
 private:
     std::shared_ptr<spdlog::logger> m_logger = spdlog::stdout_color_mt("Driver");
-    ConfigFileHandler m_configHandler = ConfigFileHandler(GetConfigPath());
+    std::optional<ConfigFileHandler> m_configHandler;
+    nlohmann::json m_defaultConfig = {{"port", ""}, {"led-count", 0}, {"last-effect", nullptr}};
 
     static constexpr int m_headerSize = 6;
 

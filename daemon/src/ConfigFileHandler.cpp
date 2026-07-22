@@ -3,7 +3,8 @@
 #include <format>
 #include <fstream>
 
-ConfigFileHandler::ConfigFileHandler(const std::string& filepath) : m_filepath(filepath)
+ConfigFileHandler::ConfigFileHandler(const std::string& filepath, const nlohmann::json& defaultConfig)
+    : config(defaultConfig), m_filepath(filepath), m_defaultConfig(defaultConfig)
 {
 }
 
@@ -66,9 +67,9 @@ void ConfigFileHandler::WriteJsonAtomically(const nlohmann::json& data) const
         throw std::runtime_error(std::format("Failed to replace config file: {}", ec.message()));
 }
 
-void ConfigFileHandler::InitConfig() const
+void ConfigFileHandler::InitConfig()
 {
     EnsureDirectoryExists();
-    const nlohmann::json defaultConfig = {{"port", ""}, {"led-count", 0}, {"last-effect", nullptr}};
-    WriteJsonAtomically(defaultConfig);
+    config = m_defaultConfig;
+    WriteJsonAtomically(m_defaultConfig);
 }

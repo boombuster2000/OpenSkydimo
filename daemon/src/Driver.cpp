@@ -5,6 +5,18 @@
 #include <termios.h>
 #include <unistd.h>
 
+Driver::Driver()
+{
+    try
+    {
+        m_configHandler.emplace(GetConfigPath(), m_defaultConfig);
+    }
+    catch (const std::runtime_error& e)
+    {
+        m_logger->error("Config unavailable, running without persistence: {}", e.what());
+    }
+}
+
 Driver::~Driver()
 {
     StopAndCleanup();
@@ -12,9 +24,14 @@ Driver::~Driver()
 
 void Driver::LoadConfigAndStart()
 {
+    if (!m_configHandler)
+        return;
+
+    nlohmann::json& config = m_configHandler->config;
+
     try
     {
-        m_configHandler.Load();
+        m_configHandler->Load();
     }
     catch (const std::runtime_error& e)
     {
@@ -27,7 +44,7 @@ void Driver::LoadConfigAndStart()
 
     try
     {
-        port = m_configHandler.config.value("port", "");
+        port = config.value("port", "");
     }
     catch (const nlohmann::json::exception& e)
     {
@@ -37,7 +54,7 @@ void Driver::LoadConfigAndStart()
 
     try
     {
-        ledCount = m_configHandler.config.value("led-count", 0);
+        ledCount = config.value("led-count", 0);
     }
     catch (const nlohmann::json::exception& e)
     {
@@ -74,13 +91,13 @@ void Driver::LoadConfigAndStart()
         return;
     }
 
-    if (!m_configHandler.config.contains("last-effect") || m_configHandler.config["last-effect"].is_null())
+    if (!config.contains("last-effect") || config["last-effect"].is_null())
     {
         m_logger->info("No previous effect to restore.");
         return;
     }
 
-    const auto& lastEffect = m_configHandler.config["last-effect"];
+    const auto& lastEffect = config["last-effect"];
     try
     {
         const Effect type = lastEffect.at("type").get<Effect>();
@@ -118,23 +135,22 @@ Response Driver::ApplyEffect(const Effect effect, const nlohmann::json& params, 
         return MakeWarning(2, "Received unknown effect.");
     }
 
-    if (result.code == 0)
-    {
-        m_configHandler.config["last-effect"] = {{"type", effect}, {"params", params}};
+    if (!(result.code == 0 && m_configHandler))
+        return result;
 
-        try
+    m_configHandler->config["last-effect"] = {{"type", effect}, {"params", params}};
+    try
+    {
+        if (saveToFile)
         {
-            if (saveToFile)
-            {
-                m_configHandler.Save();
-                m_logger->info("Updated last effect in config file.");
-            }
+            m_configHandler->Save();
+            m_logger->info("Updated last effect in config file.");
         }
-        catch (const std::runtime_error& e)
-        {
-            m_logger->warn("Effect applied but failed to persist to config: {}", e.what());
-            return MakeWarning(2, "Effect applied but failed to persist to config.");
-        }
+    }
+    catch (const std::runtime_error& e)
+    {
+        m_logger->warn("Effect applied but failed to persist to config: {}", e.what());
+        return MakeWarning(2, "Effect applied but failed to persist to config.");
     }
 
     return result;
@@ -189,11 +205,14 @@ Response Driver::SetSerialPort(const std::string& portName)
 
     m_logger->info("Setting serial port to '{}'", portName);
     m_portName = portName;
-    m_configHandler.config["port"] = portName;
 
+    if (!m_configHandler)
+        return MakeOk();
+
+    m_configHandler->config["port"] = portName;
     try
     {
-        m_configHandler.Save();
+        m_configHandler->Save();
         m_logger->info("Updated port in config file.");
     }
     catch (const std::runtime_error& e)
@@ -227,11 +246,16 @@ Response Driver::SetLedCount(const int ledCount)
 
     m_logger->info("Setting LED count to {}", ledCount);
     m_ledCount = ledCount;
-    m_configHandler.config["led-count"] = ledCount;
+    AddHeaderToBuffer();
+
+    if (!m_configHandler)
+        return MakeOk();
+
+    m_configHandler->config["led-count"] = ledCount;
 
     try
     {
-        m_configHandler.Save();
+        m_configHandler->Save();
         m_logger->info("Updated led-count in config file.");
     }
     catch (const std::runtime_error& e)
@@ -239,7 +263,6 @@ Response Driver::SetLedCount(const int ledCount)
         m_logger->warn("led-count set but failed to persist to config: {}", e.what());
     }
 
-    AddHeaderToBuffer();
     return MakeOk();
 }
 
@@ -410,7 +433,7 @@ Response Driver::Fill(const ColorRGB color)
     if (!m_isConnectionOpened)
         return MakeError(1, "driver not started", "openskydimo start");
 
-    m_logger->info("Filling {} LEDs with RGB({}, {}, {})", m_ledCount, color.r, color.g, color.b);
+    m_logger->info("Filling {} LEDs with RGB{}", m_ledCount, color);
 
     {
         std::lock_guard lock(m_bufferMutex);
