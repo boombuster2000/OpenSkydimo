@@ -1,14 +1,14 @@
-## Ubuntu
 ### Install
+
+Add the repository and key manually (recommended - review the commands before running):
 ```bash
-curl -fsSL https://chanuka-williams.github.io/openskydimo-apt/add-repo.sh | sudo bash
+curl -fsSL https://chanuka-williams.github.io/openskydimo-apt/openskydimo-archive-keyring.gpg.asc | \
+sudo tee /usr/share/keyrings/openskydimo-archive-keyring.asc > /dev/null
+
+echo "deb [signed-by=/usr/share/keyrings/openskydimo-archive-keyring.asc] \
+https://chanuka-williams.github.io/openskydimo-apt stable main" | \
+sudo tee /etc/apt/sources.list.d/openskydimo.list
+
+sudo apt update
 sudo apt install openskydimo
 ```
-Note: This adds my GPG key to your system, scoped specifically to this repository, so
-you can install and update OpenSkydimo (and any future packages I publish here) via
-`sudo apt update` / `sudo apt upgrade`.
-
-Tested on: Kubuntu 26.04 LTS.
-Should also work on other Debian-based distros with equally recent or newer library versions.
-Not guaranteed to work on older releases (e.g. Ubuntu 20.04, Debian 11) due to glibc/libstdc++ version requirements,
-will have to compile yourself.
