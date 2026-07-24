@@ -1,0 +1,22 @@
+#!/bin/sh
+set -e
+
+if ! command -v systemctl >/dev/null 2>&1; then
+    echo "Warning: systemctl not found; skipping service setup." >&2
+    exit 0
+fi
+
+if ! systemctl --global enable openskydimo.service; then
+    echo "Warning: failed to enable openskydimo.service globally." >&2
+fi
+
+for dir in /run/user/*; do
+    [ -d "$dir" ] || continue
+    uid=$(basename "$dir")
+    user=$(id -nu "$uid" 2>/dev/null) || continue
+    if ! runuser -u "$user" -- env XDG_RUNTIME_DIR="$dir" systemctl --user start openskydimo.service; then
+        echo "Warning: failed to start openskydimo.service for user $user." >&2
+    fi
+done
+
+exit 0
