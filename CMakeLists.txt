@@ -11,6 +11,13 @@ set(FETCHCONTENT_BASE_DIR
 )
 include(FetchContent)
 
+
+if(NOT DEFINED CMAKE_INSTALL_PREFIX OR CMAKE_INSTALL_PREFIX STREQUAL "/usr/local")
+    set(CMAKE_INSTALL_PREFIX "/usr" CACHE PATH "Install prefix" FORCE)
+endif()
+include(GNUInstallDirs)
+
+
 add_subdirectory(common)
 add_subdirectory(daemon)
 add_subdirectory(cli)
