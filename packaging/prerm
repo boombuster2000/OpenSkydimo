@@ -1,13 +1,19 @@
 #!/bin/sh
 set -e
 
-for dir in /run/user/*; do
-    [ -d "$dir" ] || continue
-    uid=$(basename "$dir")
-    user=$(id -nu "$uid" 2>/dev/null) || continue
-    sudo -u "$user" XDG_RUNTIME_DIR="$dir" systemctl --user stop openskydimo.service 2>/dev/null || true
-done
+if command -v systemctl >/dev/null 2>&1; then
+    for dir in /run/user/*; do
+        [ -d "$dir" ] || continue
+        uid=$(basename "$dir")
+        user=$(id -nu "$uid" 2>/dev/null) || continue
+        if ! runuser -u "$user" -- env XDG_RUNTIME_DIR="$dir" systemctl --user stop openskydimo.service; then
+            echo "Warning: failed to stop openskydimo.service for user $user." >&2
+        fi
+    done
 
-systemctl --global disable openskydimo.service 2>/dev/null || true
+    if ! systemctl --global disable openskydimo.service; then
+        echo "Warning: failed to disable openskydimo.service globally." >&2
+    fi
+fi
 
 exit 0
