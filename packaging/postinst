@@ -1,0 +1,13 @@
+#!/bin/sh
+set -e
+
+systemctl --global enable openskydimo.service 2>/dev/null || true
+
+for dir in /run/user/*; do
+    [ -d "$dir" ] || continue
+    uid=$(basename "$dir")
+    user=$(id -nu "$uid" 2>/dev/null) || continue
+    sudo -u "$user" XDG_RUNTIME_DIR="$dir" systemctl --user start openskydimo.service 2>/dev/null || true
+done
+
+exit 0

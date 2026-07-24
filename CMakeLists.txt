@@ -15,6 +15,9 @@ add_subdirectory(common)
 add_subdirectory(daemon)
 add_subdirectory(cli)
 
+install(FILES packaging/openskydimo.service
+        DESTINATION lib/systemd/user)
+
 # --- CPack / packaging ---
 set(CPACK_PACKAGE_NAME "openskydimo")
 set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
@@ -27,5 +30,9 @@ set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
 set(CPACK_DEBIAN_PACKAGE_SECTION "utils")
 set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6")
 set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+
+set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA
+        "${CMAKE_SOURCE_DIR}/packaging/postinst"
+        "${CMAKE_SOURCE_DIR}/packaging/prerm")
 
 include(CPack)
