@@ -1,6 +1,6 @@
 ### Install
 
-Add the repository and key manually
+Add the repository and key manually.
 ```bash
 curl -fsSL https://chanuka-williams.github.io/openskydimo-apt/openskydimo-archive-keyring.gpg.asc | \
 sudo tee /usr/share/keyrings/openskydimo-archive-keyring.asc > /dev/null
