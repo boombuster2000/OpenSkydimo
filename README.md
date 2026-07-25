@@ -1,3 +1,7 @@
+## To Start
+
+Run `openskydimo help` to start.
+
 ## Ubuntu
 
 ### Install
