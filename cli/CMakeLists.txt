@@ -9,4 +9,4 @@ set_target_properties(openskydimo-cli PROPERTIES OUTPUT_NAME "openskydimo")
 target_include_directories(openskydimo-cli PRIVATE include)
 target_link_libraries(openskydimo-cli PRIVATE openskydimo-common)
 
-install(TARGETS openskydimo-cli RUNTIME DESTINATION bin)
+install(TARGETS openskydimo-cli RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
