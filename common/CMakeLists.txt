@@ -10,15 +10,15 @@ add_library(openskydimo-common STATIC
         include/openskydimo/types/Response.h
         include/openskydimo/types/ColorRGB.h
 
-        include/openskydimo/CommandDispatcher/Describable.h
-        src/CommandDispatcher/Describable.cpp
-        include/openskydimo/CommandDispatcher/Option.h
-        src/CommandDispatcher/Option.cpp
-        include/openskydimo/CommandDispatcher/Command.h
-        src/CommandDispatcher/Command.cpp
-        include/openskydimo/CommandDispatcher/CommandGroup.h
-        src/CommandDispatcher/CommandGroup.cpp
-        include/openskydimo/CommandDispatcher/CommandNode.h
+        include/openskydimo/command_dispatcher/Describable.h
+        src/command_dispatcher/Describable.cpp
+        include/openskydimo/command_dispatcher/Option.h
+        src/command_dispatcher/Option.cpp
+        include/openskydimo/command_dispatcher/Command.h
+        src/command_dispatcher/Command.cpp
+        include/openskydimo/command_dispatcher/CommandGroup.h
+        src/command_dispatcher/CommandGroup.cpp
+        include/openskydimo/command_dispatcher/CommandNode.h
 )
 
 FetchContent_Declare(

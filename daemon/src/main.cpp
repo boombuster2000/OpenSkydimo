@@ -19,7 +19,7 @@ int main()
 {
     const std::shared_ptr<spdlog::logger> logger = spdlog::stdout_color_mt("Daemon");
 
-    Server server(s_socketPath, 1, 128);
+    Server server(openskydimo::s_socketPath, 1, 128);
     g_server = &server;
 
     struct sigaction signalAction{};

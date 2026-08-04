@@ -5,11 +5,13 @@
 #include <termios.h>
 #include <unistd.h>
 
+using namespace openskydimo::types;
+
 Driver::Driver()
 {
     try
     {
-        m_configHandler.emplace(GetConfigPath(), m_defaultConfig);
+        m_configHandler.emplace(openskydimo::GetConfigPath(), m_defaultConfig);
     }
     catch (const std::runtime_error& e)
     {

@@ -3,20 +3,22 @@
 #include <functional>
 #include <string>
 
-#include "CommandDispatcher/Command.h"
-#include "CommandDispatcher/CommandGroup.h"
+#include "command_dispatcher/Command.h"
+#include "command_dispatcher/CommandGroup.h"
 
-namespace openskydimo::commands
+namespace openskydimo
 {
 
-inline CommandGroup* AddSetCmd(CommandGroup* root)
+inline command_dispatcher::CommandGroup* AddSetCmd(command_dispatcher::CommandGroup* root)
 {
     return root->AddCommandGroup("set", "Configure LED driver settings");
 }
 
-inline Command* AddSetPortCmd(CommandGroup* setCmdGroup, const Callback& callback)
+inline command_dispatcher::Command* AddSetPortCmd(command_dispatcher::CommandGroup* setCmdGroup,
+                                                  const command_dispatcher::Callback& callback)
 {
-    Command* setPortCmd = setCmdGroup->AddCommand("port", "Configure the serial port for LED communication");
+    command_dispatcher::Command* setPortCmd =
+        setCmdGroup->AddCommand("port", "Configure the serial port for LED communication");
     setPortCmd->AddOption<std::string>("port", "Serial port path (e.g. /dev/ttyUSB0)",
                                        std::function([](const std::string& value) { return !value.empty(); }));
     setPortCmd->SetCallback(callback);
@@ -24,32 +26,37 @@ inline Command* AddSetPortCmd(CommandGroup* setCmdGroup, const Callback& callbac
     return setPortCmd;
 }
 
-inline Command* AddSetCountCmd(CommandGroup* setCmdGroup, const Callback& callback)
+inline command_dispatcher::Command* AddSetCountCmd(command_dispatcher::CommandGroup* setCmdGroup,
+                                                   const command_dispatcher::Callback& callback)
 {
-    Command* setCountCmd = setCmdGroup->AddCommand("count", "Configure the total number of LEDs in the strip");
+    command_dispatcher::Command* setCountCmd =
+        setCmdGroup->AddCommand("count", "Configure the total number of LEDs in the strip");
     setCountCmd->AddOption<int>("count", "Number of LEDs (1-255)",
                                 std::function([](const int value) { return value >= 1 && value <= 255; }));
     setCountCmd->SetCallback(callback);
     return setCountCmd;
 }
 
-inline Command* AddStartCmd(CommandGroup* root, const Callback& callback)
+inline command_dispatcher::Command* AddStartCmd(command_dispatcher::CommandGroup* root,
+                                                const command_dispatcher::Callback& callback)
 {
-    Command* startCmd = root->AddCommand("start", "Start the LED driver control loop");
+    command_dispatcher::Command* startCmd = root->AddCommand("start", "Start the LED driver control loop");
     startCmd->SetCallback(callback);
     return startCmd;
 }
 
-inline Command* AddStopCmd(CommandGroup* root, const Callback& callback)
+inline command_dispatcher::Command* AddStopCmd(command_dispatcher::CommandGroup* root,
+                                               const command_dispatcher::Callback& callback)
 {
-    Command* stopCmd = root->AddCommand("stop", "Stop the LED driver control loop");
+    command_dispatcher::Command* stopCmd = root->AddCommand("stop", "Stop the LED driver control loop");
     stopCmd->SetCallback(callback);
     return stopCmd;
 }
 
-inline Command* AddFillCmd(CommandGroup* root, const Callback& callback)
+inline command_dispatcher::Command* AddFillCmd(command_dispatcher::CommandGroup* root,
+                                               const command_dispatcher::Callback& callback)
 {
-    Command* fillCmd = root->AddCommand("fill", "Fill all LEDs with a solid color");
+    command_dispatcher::Command* fillCmd = root->AddCommand("fill", "Fill all LEDs with a solid color");
     fillCmd->AddOption<int>("red", "Red component (0-255)",
                             std::function([](const int value) { return value >= 0 && value <= 255; }));
     fillCmd->AddOption<int>("green", "Green component (0-255)",
@@ -61,4 +68,4 @@ inline Command* AddFillCmd(CommandGroup* root, const Callback& callback)
     return fillCmd;
 }
 
-} // namespace openskydimo::commands
+} // namespace openskydimo

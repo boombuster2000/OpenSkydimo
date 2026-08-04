@@ -19,6 +19,9 @@
 
 class Driver
 {
+    using Response = openskydimo::types::Response;
+    using ColorRGB = openskydimo::types::ColorRGB;
+
 public:
     enum class Effect
     {

@@ -2,6 +2,8 @@
 
 #include <string>
 
+namespace openskydimo::command_dispatcher
+{
 class Describable
 {
 public:
@@ -17,3 +19,5 @@ private:
     std::string m_name;
     std::string m_description;
 };
+
+} // namespace openskydimo::command_dispatcher

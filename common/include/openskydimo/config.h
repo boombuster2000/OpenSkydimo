@@ -4,6 +4,9 @@
 #include <stdexcept>
 #include <string>
 
+namespace openskydimo
+{
+
 static const std::string s_socketPath = "/tmp/openskydimo.sock";
 
 inline std::filesystem::path GetConfigPath()
@@ -17,3 +20,5 @@ inline std::filesystem::path GetConfigPath()
 
     return std::filesystem::path(home) / ".config" / "openskydimo" / "config.json";
 }
+
+} // namespace openskydimo

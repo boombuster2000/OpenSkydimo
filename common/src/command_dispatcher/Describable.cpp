@@ -1,4 +1,6 @@
-#include "openskydimo/CommandDispatcher/Describable.h"
+#include "openskydimo/command_dispatcher/Describable.h"
+
+using namespace openskydimo::command_dispatcher;
 
 Describable::Describable(std::string name, std::string description)
     : m_name(std::move(name)), m_description(std::move(description))

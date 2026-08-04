@@ -1,4 +1,4 @@
-#include "openskydimo/CommandDispatcher/CommandGroup.h"
+#include "openskydimo/command_dispatcher/CommandGroup.h"
 
 #include <algorithm>
 #include <format>
@@ -7,6 +7,9 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+
+using namespace openskydimo::types;
+using namespace openskydimo::command_dispatcher;
 
 CommandGroup::CommandGroup(const std::string& name, const std::string& description) : CommandNode(name, description)
 {

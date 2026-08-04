@@ -17,8 +17,8 @@ void OpenSkydimoClient::SendCommand(const int argc, char* argv[]) const
     SendMessage(command.dump());
 }
 
-Response OpenSkydimoClient::GetResponse() const
+openskydimo::types::Response OpenSkydimoClient::GetResponse() const
 {
     std::string message = ReceiveMessage();
-    return nlohmann::json::parse(message).get<Response>();
+    return nlohmann::json::parse(message).get<openskydimo::types::Response>();
 }

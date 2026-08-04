@@ -11,11 +11,14 @@
 #include "openskydimo/commands.hpp"
 #include "openskydimo/types/Response.h"
 
+using namespace openskydimo::types;
+using namespace openskydimo::command_dispatcher;
+
 Server::Server(std::string socketPath, const int backlogSize, const int bufferSize)
     : UnixSocketServer(std::move(socketPath), backlogSize, bufferSize),
       m_rootCommandGroup("openskydimo", "Program to control skydimo lights on linux.")
 {
-    using namespace openskydimo::commands;
+    using namespace openskydimo;
 
     // --- fill ---
     AddFillCmd(&m_rootCommandGroup, [this](const Command& cmd) {

@@ -4,6 +4,8 @@
 
 #include <nlohmann/json.hpp>
 
+namespace openskydimo::types
+{
 struct Response
 {
     int code;
@@ -45,3 +47,5 @@ inline void from_json(const nlohmann::json& j, Response& r)
     j.at("code").get_to(r.code);
     j.at("message").get_to(r.message);
 }
+
+} // namespace openskydimo::types
