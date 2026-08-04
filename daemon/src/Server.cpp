@@ -8,7 +8,7 @@
 
 #include <nlohmann/json.hpp>
 
-#include "openskydimo/commands.hpp"
+#include "openskydimo/commands.h"
 #include "openskydimo/types/Response.h"
 
 using namespace openskydimo::types;

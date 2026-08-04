@@ -1,5 +1,5 @@
 add_library(openskydimo-common STATIC
-        include/openskydimo/commands.hpp
+        include/openskydimo/commands.h
         include/openskydimo/config.h
 
         include/ipc/UnixSocketServer.h

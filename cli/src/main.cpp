@@ -2,7 +2,7 @@
 
 #include "OpenSkydimoClient.h"
 #include "openskydimo/command_dispatcher/CommandGroup.h"
-#include "openskydimo/commands.hpp"
+#include "openskydimo/commands.h"
 #include "openskydimo/config.h"
 #include "openskydimo/types/Response.h"
 
