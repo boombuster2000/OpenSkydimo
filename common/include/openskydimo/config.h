@@ -7,7 +7,18 @@
 namespace openskydimo
 {
 
-static const std::string s_socketPath = "/tmp/openskydimo.sock";
+inline std::filesystem::path GetRuntimeDir()
+{
+    if (const char* xdgRuntimeDir = std::getenv("XDG_RUNTIME_DIR"); xdgRuntimeDir && *xdgRuntimeDir)
+        return xdgRuntimeDir;
+
+    return "/tmp";
+}
+
+inline std::string GetSocketPath()
+{
+    return (GetRuntimeDir() / "openskydimo.sock").string();
+}
 
 inline std::filesystem::path GetConfigPath()
 {
