@@ -20,7 +20,7 @@ int main(const int argc, char* argv[])
     using namespace openskydimo;
     using namespace openskydimo::command_dispatcher;
 
-    OpenSkydimoClient client(s_socketPath, 128);
+    OpenSkydimoClient client(GetSocketPath(), 128);
 
     CommandGroup rootCommandGroup("openskydimo", "Program to control skydimo lights on linux.");
 

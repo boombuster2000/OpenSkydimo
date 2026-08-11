@@ -19,4 +19,4 @@ configure_file(
         @ONLY
 )
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/openskydimo.service
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/systemd/user)
+        DESTINATION lib/systemd/user)
