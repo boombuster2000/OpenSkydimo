@@ -393,7 +393,7 @@ void Driver::SendLoop()
         catch (const SerialWriteException& e)
         {
             m_logger->error("Send loop write error: {}", e.what());
-            m_isConnectionOpened = false; // Stop rather than spam errors
+            m_isConnectionOpened = false;
             break;
         }
 
