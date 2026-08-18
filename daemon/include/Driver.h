@@ -63,7 +63,7 @@ private:
     std::string m_portName;
     int m_ledCount = 0;
     int m_baudRate = 115200;
-    std::chrono::microseconds m_sendInterval{1'000'000 / 60};
+    std::chrono::microseconds m_sendInterval{1'000'000 / 30};
 
     std::vector<std::byte> m_buffer;
     mutable std::mutex m_bufferMutex;
