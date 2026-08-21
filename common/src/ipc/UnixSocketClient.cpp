@@ -11,6 +11,8 @@
 #include <utility>
 #include <vector>
 
+using namespace ipc;
+
 UnixSocketClient::UnixSocketClient(std::string socketPath, const int bufferSize)
     : m_socket(-1), m_socketPath(std::move(socketPath)), m_bufferSize(bufferSize)
 {
@@ -61,7 +63,7 @@ void UnixSocketClient::SendMessage(const std::string& message) const
 
         if (bytesWritten == -1)
             throw std::runtime_error(std::string("Failed to send: ") + strerror(errno));
-        
+
         totalBytesWritten += bytesWritten;
     }
 }

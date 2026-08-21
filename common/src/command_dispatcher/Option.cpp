@@ -1,7 +1,9 @@
-#include "openskydimo/CommandDispatcher/Option.h"
+#include "openskydimo/command_dispatcher/Option.h"
 
 #include <format>
 #include <stdexcept>
+
+using namespace openskydimo::command_dispatcher;
 
 OptionVariant Option::GetValue() const
 {

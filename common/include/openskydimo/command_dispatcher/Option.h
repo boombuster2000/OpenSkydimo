@@ -6,6 +6,9 @@
 
 #include "Describable.h"
 
+namespace openskydimo::command_dispatcher
+{
+
 using OptionVariant = std::variant<std::string, int, float, bool>;
 
 class Option : public Describable
@@ -29,3 +32,5 @@ private:
     OptionVariant m_value;
     std::function<bool(OptionVariant)> m_validator;
 };
+
+} // namespace openskydimo::command_dispatcher

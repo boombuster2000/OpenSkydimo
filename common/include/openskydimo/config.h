@@ -4,7 +4,21 @@
 #include <stdexcept>
 #include <string>
 
-static const std::string s_socketPath = "/tmp/openskydimo.sock";
+namespace openskydimo
+{
+
+inline std::filesystem::path GetRuntimeDir()
+{
+    if (const char* xdgRuntimeDir = std::getenv("XDG_RUNTIME_DIR"); xdgRuntimeDir && *xdgRuntimeDir)
+        return xdgRuntimeDir;
+
+    return "/tmp";
+}
+
+inline std::string GetSocketPath()
+{
+    return (GetRuntimeDir() / "openskydimo.sock").string();
+}
 
 inline std::filesystem::path GetConfigPath()
 {
@@ -17,3 +31,5 @@ inline std::filesystem::path GetConfigPath()
 
     return std::filesystem::path(home) / ".config" / "openskydimo" / "config.json";
 }
+
+} // namespace openskydimo

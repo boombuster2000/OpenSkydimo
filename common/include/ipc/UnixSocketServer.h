@@ -4,6 +4,9 @@
 #include <sys/un.h>
 #include <vector>
 
+namespace ipc
+{
+
 class UnixSocketServer
 {
 private:
@@ -49,3 +52,5 @@ private:
     int m_bufferSize;
     std::vector<int> m_clientFds;
 };
+
+} // namespace ipc

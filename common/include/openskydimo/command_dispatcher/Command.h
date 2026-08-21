@@ -11,10 +11,16 @@
 #include "CommandNode.h"
 #include "Option.h"
 
+namespace openskydimo::command_dispatcher
+{
+
 class Command;
-using Callback = std::function<Response(const Command&)>;
+using Callback = std::function<types::Response(const Command&)>;
+
 class Command : public CommandNode
 {
+    using Response = types::Response;
+
 public:
     Command(const std::string& name, const std::string& description);
 
@@ -48,3 +54,5 @@ private:
     std::vector<Option> m_options;
     Callback m_callback;
 };
+
+} // namespace openskydimo::command_dispatcher

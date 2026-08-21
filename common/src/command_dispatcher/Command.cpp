@@ -1,6 +1,9 @@
-#include "openskydimo/CommandDispatcher/Command.h"
+#include "openskydimo/command_dispatcher/Command.h"
 
 #include <format>
+
+using namespace openskydimo::types;
+using namespace openskydimo::command_dispatcher;
 
 Command::Command(const std::string& name, const std::string& description) : CommandNode(name, description)
 {
@@ -35,7 +38,7 @@ Response Command::Execute(const std::vector<std::string> args)
     }
     if (!m_callback)
         return MakeError(1, std::format("command '{}' has no callback set", GetName()));
-    
+
     return m_callback(*this);
 }
 

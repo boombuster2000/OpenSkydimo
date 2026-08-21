@@ -5,11 +5,13 @@
 #include <termios.h>
 #include <unistd.h>
 
+using namespace openskydimo::types;
+
 Driver::Driver()
 {
     try
     {
-        m_configHandler.emplace(GetConfigPath(), m_defaultConfig);
+        m_configHandler.emplace(openskydimo::GetConfigPath(), m_defaultConfig);
     }
     catch (const std::runtime_error& e)
     {
@@ -391,7 +393,7 @@ void Driver::SendLoop()
         catch (const SerialWriteException& e)
         {
             m_logger->error("Send loop write error: {}", e.what());
-            m_isConnectionOpened = false; // Stop rather than spam errors
+            m_isConnectionOpened = false;
             break;
         }
 

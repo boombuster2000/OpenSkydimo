@@ -11,6 +11,8 @@
 #include <utility>
 #include <vector>
 
+using namespace ipc;
+
 std::atomic<bool> UnixSocketServer::s_shutdownRequested{false};
 
 UnixSocketServer::UnixSocketServer(std::string socketPath, const int backlogSize, const int bufferSize)
@@ -160,7 +162,7 @@ ssize_t UnixSocketServer::SendResponse(const int clientFd, const std::string& re
             OnFailedToSend(clientFd, response);
             return -1;
         }
-        
+
         totalSent += bytesSent;
     }
 

@@ -2,6 +2,9 @@
 #include <string>
 #include <sys/un.h>
 
+namespace ipc
+{
+
 class UnixSocketClient
 {
 public:
@@ -19,3 +22,5 @@ private:
     sockaddr_un m_address{};
     int m_bufferSize;
 };
+
+} // namespace ipc

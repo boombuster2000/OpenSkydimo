@@ -6,6 +6,8 @@
 #include "spdlog/fmt/fmt.h"
 #include <nlohmann/json.hpp>
 
+namespace openskydimo::types
+{
 struct ColorRGB
 {
     std::byte r = static_cast<std::byte>(0);
@@ -37,10 +39,12 @@ inline void from_json(const nlohmann::json& j, ColorRGB& color)
     color = ColorRGB(j.at("r").get<int>(), j.at("g").get<int>(), j.at("b").get<int>());
 }
 
+} // namespace openskydimo::types
+
 template <>
-struct fmt::formatter<ColorRGB> : formatter<std::string>
+struct fmt::formatter<openskydimo::types::ColorRGB> : formatter<std::string>
 {
-    auto format(const ColorRGB& my, format_context& ctx) const -> decltype(ctx.out())
+    auto format(const openskydimo::types::ColorRGB& my, format_context& ctx) const -> decltype(ctx.out())
     {
         return format_to(ctx.out(), "({},{},{})", std::to_integer<int>(my.r), std::to_integer<int>(my.g),
                          std::to_integer<int>(my.b));

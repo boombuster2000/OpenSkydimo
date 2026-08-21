@@ -1,24 +1,26 @@
 #include <iostream>
 
 #include "OpenSkydimoClient.h"
-#include "openskydimo/CommandDispatcher/CommandGroup.h"
-#include "openskydimo/commands.hpp"
+#include "openskydimo/command_dispatcher/CommandGroup.h"
+#include "openskydimo/commands.h"
 #include "openskydimo/config.h"
 #include "openskydimo/types/Response.h"
 
-static Response SendCommand(OpenSkydimoClient& client, const int argc, char* argv[])
+static openskydimo::types::Response SendCommand(OpenSkydimoClient& client, const int argc, char* argv[])
 {
     client.Connect();
     client.SendCommand(argc, argv);
-    Response response = client.GetResponse();
+    openskydimo::types::Response response = client.GetResponse();
     client.Disconnect();
     return response;
 }
 
 int main(const int argc, char* argv[])
 {
-    using namespace openskydimo::commands;
-    OpenSkydimoClient client(s_socketPath, 128);
+    using namespace openskydimo;
+    using namespace openskydimo::command_dispatcher;
+
+    OpenSkydimoClient client(GetSocketPath(), 128);
 
     CommandGroup rootCommandGroup("openskydimo", "Program to control skydimo lights on linux.");
 
